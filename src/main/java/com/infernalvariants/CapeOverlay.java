@@ -323,10 +323,16 @@ class CapeOverlay extends Overlay
 			return;
 		}
 		BufferedImage hem = plugin.hemTexture(style);
-		// the original texture flows at about one texel per client cycle
-		float scroll = config.flowing() ? (client.getGameCycle() % CapeTextures.SIZE) : 0f;
-		TexturePaint paint = new TexturePaint(tex, new Rectangle2D.Float(0, -scroll, TEX, TEX));
-		TexturePaint hemPaint = hem == null ? null : new TexturePaint(hem, new Rectangle2D.Float(0, -scroll, TEX, TEX));
+		BufferedImage glow = plugin.glowTexture(style);
+		StyleLook look = plugin.look(style);
+		boolean animate = config.flowing();
+		float t = client.getGameCycle() / 50f;
+		// each style flows at its own pace (some barely at all)
+		float scroll = animate ? ((t * look.flowSpeed) % TEX + TEX) % TEX : 0f;
+		Rectangle2D.Float anchor = new Rectangle2D.Float(0, -scroll, TEX, TEX);
+		TexturePaint paint = new TexturePaint(tex, anchor);
+		TexturePaint hemPaint = hem == null ? null : new TexturePaint(hem, anchor);
+		TexturePaint glowPaint = glow == null ? null : new TexturePaint(glow, anchor);
 
 		faces.sort((x, y) -> Float.compare(y.depth, x.depth));
 		AffineTransform base = g.getTransform();
@@ -364,6 +370,18 @@ class CapeOverlay extends Overlay
 				g.setPaint(Color.BLACK);
 				g.fill(tri);
 				g.setComposite(baseComposite);
+			}
+			// the glowing veins sit on top of the shading, so they read as light, not paint
+			if (glowPaint != null)
+			{
+				float a = animate ? look.glowAlpha(t, pf.hemness, pf.order * 0.37f) : (look.glowMin + look.glowMax) * 0.5f;
+				if (a > 0.02f)
+				{
+					g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, a));
+					g.setPaint(glowPaint);
+					g.fill(tri);
+					g.setComposite(baseComposite);
+				}
 			}
 		}
 		g.setTransform(base);
@@ -526,6 +544,17 @@ class CapeOverlay extends Overlay
 				c0[0] - 16 * rx - 16 * dx, c0[1] - 16 * ry - 16 * dy);
 			g.setTransform(base);
 			g.transform(at);
+			// a soft glow behind the emblem that breathes with the veins
+			float glowA = 0.35f;
+			if (config.flowing())
+			{
+				StyleLook look = plugin.look(style);
+				glowA = 0.25f + 0.55f * look.glowAlpha(client.getGameCycle() / 50f, host.hemness, i * 1.3f);
+			}
+			Composite oc = g.getComposite();
+			g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, Math.min(1f, glowA)));
+			g.drawImage(plugin.emblemGlow(style), -16, -16, 64, 64, null);
+			g.setComposite(oc);
 			g.drawImage(sprites[EMBLEM_SPRITE[e][i]], 0, 0, null);
 		}
 		g.setTransform(base);

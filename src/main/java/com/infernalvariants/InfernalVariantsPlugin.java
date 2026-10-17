@@ -61,9 +61,11 @@ public class InfernalVariantsPlugin extends Plugin
 	@Inject
 	private InfernalVariantsConfig config;
 
-	private float[] heat;
+	private CapeTextures.Analysis analysis;
 	private final Map<CapeStyle, BufferedImage> veinTextures = new EnumMap<>(CapeStyle.class);
 	private final Map<CapeStyle, BufferedImage> hemTextures = new EnumMap<>(CapeStyle.class);
+	private final Map<CapeStyle, BufferedImage> glowTextures = new EnumMap<>(CapeStyle.class);
+	private final Map<CapeStyle, StyleLook> looks = new EnumMap<>(CapeStyle.class);
 	private final Map<CapeStyle, BufferedImage[]> emblemSprites = new EnumMap<>(CapeStyle.class);
 
 	/** Players whose cape we've put a colour override on, and the style it carries. */
@@ -105,7 +107,8 @@ public class InfernalVariantsPlugin extends Plugin
 		veinTextures.clear();
 		hemTextures.clear();
 		emblemSprites.clear();
-		heat = null;
+		analysis = null;
+		glowTextures.clear();
 	}
 
 	@Subscribe
@@ -150,7 +153,7 @@ public class InfernalVariantsPlugin extends Plugin
 	@Subscribe
 	public void onClientTick(ClientTick tick)
 	{
-		if (heat == null)
+		if (analysis == null)
 		{
 			loadHeat();
 		}
@@ -305,6 +308,9 @@ public class InfernalVariantsPlugin extends Plugin
 
 		veinTextures.remove(c);
 		hemTextures.remove(c);
+		glowTextures.remove(c);
+		looks.remove(c);
+		emblemGlows.remove(c);
 		emblemSprites.remove(c);
 	}
 
@@ -320,7 +326,8 @@ public class InfernalVariantsPlugin extends Plugin
 		{
 			return;
 		}
-		heat = CapeTextures.heatMap(pixels, tp.getBrightness());
+		analysis = new CapeTextures.Analysis(CapeTextures.heatMap(pixels, tp.getBrightness()));
+		glowTextures.clear();
 		veinTextures.clear();
 		hemTextures.clear();
 		emblemSprites.clear();
@@ -328,25 +335,46 @@ public class InfernalVariantsPlugin extends Plugin
 
 	boolean texturesReady()
 	{
-		return heat != null;
+		return analysis != null;
 	}
 
 	BufferedImage veinTexture(CapeStyle style)
 	{
-		if (heat == null || style.isOriginal())
+		if (analysis == null || style.isOriginal())
 		{
 			return null;
 		}
-		return veinTextures.computeIfAbsent(style, s -> CapeTextures.veinTexture(s, heat));
+		return veinTextures.computeIfAbsent(style, s -> CapeTextures.veinTexture(s, analysis));
 	}
 
 	BufferedImage hemTexture(CapeStyle style)
 	{
-		if (heat == null || !CapeTextures.hasHem(style))
+		if (analysis == null || !CapeTextures.hasHem(style))
 		{
 			return null;
 		}
-		return hemTextures.computeIfAbsent(style, s -> CapeTextures.hemTexture(s, heat));
+		return hemTextures.computeIfAbsent(style, s -> CapeTextures.hemTexture(s, analysis));
+	}
+
+	BufferedImage glowTexture(CapeStyle style)
+	{
+		if (analysis == null || style.isOriginal())
+		{
+			return null;
+		}
+		return glowTextures.computeIfAbsent(style, s -> CapeTextures.glowTexture(s, analysis));
+	}
+
+	private final Map<CapeStyle, BufferedImage> emblemGlows = new EnumMap<>(CapeStyle.class);
+
+	BufferedImage emblemGlow(CapeStyle style)
+	{
+		return emblemGlows.computeIfAbsent(style, CapeTextures::glowSprite);
+	}
+
+	StyleLook look(CapeStyle style)
+	{
+		return looks.computeIfAbsent(style, StyleLook::of);
 	}
 
 	BufferedImage[] emblems(CapeStyle style)

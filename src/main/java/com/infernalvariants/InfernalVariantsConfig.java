@@ -46,8 +46,8 @@ public interface InfernalVariantsConfig extends Config
 
 	@ConfigItem(
 		keyName = "flowing",
-		name = "Flowing veins",
-		description = "Let the glowing veins slowly flow, like the original lava",
+		name = "Animated veins",
+		description = "Each style moves in its own way: flowing lava, pulsing glow, electric flicker, light sweeping down the cape",
 		position = 2
 	)
 	default boolean flowing()

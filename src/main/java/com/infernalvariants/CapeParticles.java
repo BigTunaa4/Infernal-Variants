@@ -519,9 +519,25 @@ final class CapeParticles
 		switch (p.kind)
 		{
 			case DOT:
+				if (px >= 2)
+				{
+					// a dim pixel halo around the spark so it reads as light, OSRS-style
+					g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, a * 0.3f));
+					g.fillRect(sx - px / 2 - 1, sy - px / 2 - 1, px + 2, px + 2);
+					g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, a));
+				}
 				g.fillRect(sx - px / 2, sy - px / 2, px, px);
+				if (px >= 3 && t < 0.5f)
+				{
+					// white-hot centre while the particle is young
+					g.setColor(new Color(CapeTextures.lerp(color, 0xFFFFFF, 0.6f)));
+					g.fillRect(sx - px / 2 + 1, sy - px / 2 + 1, px - 2, px - 2);
+				}
 				break;
 			case STREAK:
+				g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, a * 0.35f));
+				g.fillRect(sx - px / 2, sy - px * 2, Math.max(1, px - 1), px * 3);
+				g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, a));
 				g.fillRect(sx - px / 2, sy - px, Math.max(1, px - 1), px * 2);
 				break;
 			case PUFF:
