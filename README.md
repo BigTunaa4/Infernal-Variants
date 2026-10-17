@@ -39,12 +39,12 @@ Repaint your infernal cape in 26 designs, or recolour any of them yourself. The 
 ## Settings
 - **Cape style** — pick the design.
 - **Custom style** — set Cape style to Custom, pick a design (Ice, Shadow or any other) and choose its base, line and glow colours. The design keeps its pattern, motion and emblems.
-
-![custom colours](custom.png)
 - **Animated veins** — each style has its own motion (see below).
 - **Emblems** — toggle the style emblems.
 - **Include infernal max cape** — also repaint the infernal max cape.
 - **Other players' capes** — Off, Same style, or Random per player (stable per name).
+
+![custom colours](custom.png)
 
 ## Motion
 On every style the veins flow down the cape, each at its own pace, with a glow that moves in its own way:
