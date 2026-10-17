@@ -184,7 +184,7 @@ final class CapeTextures
 	 */
 	static boolean hasHem(CapeStyle style)
 	{
-		return style.special == CapeStyle.Special.DRAGON || style.special == CapeStyle.Special.SUNSET;
+		return style.special() == CapeStyle.Special.DRAGON || style.special() == CapeStyle.Special.SUNSET;
 	}
 
 	static BufferedImage hemTexture(CapeStyle style, Analysis an)
@@ -194,13 +194,13 @@ final class CapeTextures
 			return null;
 		}
 		float[] p = {0f, .3f, .6f, 1f};
-		int[] c = style.special == CapeStyle.Special.DRAGON
+		int[] c = style.special() == CapeStyle.Special.DRAGON
 			// dragonfire: the veins burn blue at the bottom
 			? new int[]{0x120808, 0x14185A, 0x3A6CFF, 0xD0E8FF}
 			// varlamore sunset: warm orange fades into dusk purple toward the hem
 			: new int[]{0x140A1C, 0x3A1450, 0xA846D2, 0xF6C8FF};
 		StyleLook base = StyleLook.of(style);
-		int halo = style.special == CapeStyle.Special.DRAGON ? 0x10208A : 0x5A1478;
+		int halo = style.special() == CapeStyle.Special.DRAGON ? 0x10208A : 0x5A1478;
 		StyleLook look = base.withHalo(halo);
 		return paint(style, an, p, c, look, true);
 	}
@@ -263,7 +263,7 @@ final class CapeTextures
 					c = scale(c, 0.78f);
 				}
 
-				c = special(style.special, c, h, n, u, v, x, y, an, rgb, look);
+				c = special(style.special(), c, h, n, u, v, x, y, an, rgb, look);
 				img.setRGB(x, y, c);
 			}
 		}
@@ -317,6 +317,17 @@ final class CapeTextures
 				c = scale(c, 1f + (dome - 1f) * plateness);
 				return addTinted(c, tint, mottle * plateness);
 			}
+			case SCALE:
+			{
+				// each little scale is lit from above: bright at its top, darker toward its tip
+				int w = 32, step = 16;
+				int row = Math.floorMod(y + 4, step * 2) < step ? 0 : 1;
+				float sy = Math.floorMod(y + 4, step) / (float) step;
+				float sx = Math.floorMod(x - (row == 1 ? w / 2 : 0), w) / (float) w;
+				float lit = 0.07f * (1f - sy) - 0.05f * sy - 0.03f * Math.abs(sx - 0.5f) * 2f;
+				float rough = (stone(x, y) - 0.5f) * 0.06f + (pr - 0.5f) * look.plateVariation * 0.1f;
+				return addTinted(c, tint, (lit + rough + 0.015f * (n - 0.5f)) * plateness);
+			}
 			case SPACE:
 			default:
 				return addTinted(c, tint, (n - 0.5f) * 0.03f * plateness);
@@ -335,8 +346,8 @@ final class CapeTextures
 			case PRISM:
 			{
 				// crystal: veins shimmer through a soft rainbow, the stone has bright facets
-				float k = clamp((h - 0.38f) / 0.42f) * 0.4f;
-				int rainbow = Color.HSBtoRGB((u * 0.8f + v * 0.6f) % 1f, 0.35f, 1f) & 0xFFFFFF;
+				float k = clamp((h - 0.38f) / 0.42f) * 0.75f;
+				int rainbow = Color.HSBtoRGB((u * 0.8f + v * 0.6f) % 1f, 0.45f, 1f) & 0xFFFFFF;
 				c = lerp(c, rainbow, k);
 				float facet = (float) Math.abs(Math.sin(u * 31 + v * 13) * Math.sin(v * 27 - u * 9));
 				if (h < 0.2f)

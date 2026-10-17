@@ -108,8 +108,14 @@ final class StyleLook
 			case TWISTED:
 				return new StyleLook(0x0E4A2A, 0.60f, 0.18f, Motion.RIPPLE, 8, 0.05f, 0.55f, 3.6f);
 			case CUSTOM:
-				return new StyleLook(CapeTextures.lerp(s.stopRgb[0], s.stopRgb[2], 0.55f), 0.55f, 0.18f,
-					Motion.FLOW, 12, 0.1f, 0.55f, 2.5f);
+			{
+				// borrow the base design's motion and finish, with a halo in the custom colours
+				CapeStyle base = CapeStyle.customBase;
+				StyleLook b = base == null || base == CapeStyle.CUSTOM || base == CapeStyle.INFERNAL
+					? new StyleLook(0, 0.55f, 0.18f, Motion.FLOW, 12, 0.1f, 0.55f, 2.5f)
+					: of(base);
+				return b.withHalo(CapeTextures.lerp(s.stopRgb[0], s.stopRgb[2], 0.55f));
+			}
 			default:
 				return new StyleLook(0xA02008, 0.5f, 0.15f, Motion.FLOW, 50, 0f, 0f, 1f);
 		}

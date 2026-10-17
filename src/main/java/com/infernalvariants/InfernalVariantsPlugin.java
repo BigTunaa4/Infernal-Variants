@@ -301,7 +301,8 @@ public class InfernalVariantsPlugin extends Plugin
 		c.stopRgb[1] = CapeTextures.lerp(plate, vein, 0.35f);
 		c.stopRgb[2] = vein;
 		c.stopRgb[3] = core;
-		CapeStyle.customPattern = config.customPattern();
+		CapeStyle.customBase = config.customBase();
+		veinTextures.remove(c);
 
 		float[] p = java.awt.Color.RGBtoHSB((plate >> 16) & 255, (plate >> 8) & 255, plate & 255, null);
 		c.rockHue = Math.round(p[0] * 64) & 63;
@@ -396,7 +397,7 @@ public class InfernalVariantsPlugin extends Plugin
 			BufferedImage[] arr = new BufferedImage[4];
 			for (int i = 0; i < arr.length; i++)
 			{
-				arr[i] = CapeTextures.emblemSprite(s.emblem, i, s);
+				arr[i] = CapeTextures.emblemSprite(s.emblem(), i, s);
 			}
 			return arr;
 		});

@@ -20,7 +20,7 @@ public interface InfernalVariantsConfig extends Config
 
 	@ConfigSection(
 		name = "Custom style",
-		description = "Colours used when the cape style is set to Custom",
+		description = "Recolour any design: set Cape style to Custom, pick a design and your colours",
 		position = 30,
 		closedByDefault = true
 	)
@@ -85,8 +85,8 @@ public interface InfernalVariantsConfig extends Config
 
 	@ConfigItem(
 		keyName = "customPlate",
-		name = "Plate colour",
-		description = "Colour of the rock plates between the veins",
+		name = "Base colour",
+		description = "Colour of the surface between the glowing lines",
 		position = 31,
 		section = customSection
 	)
@@ -97,8 +97,8 @@ public interface InfernalVariantsConfig extends Config
 
 	@ConfigItem(
 		keyName = "customVein",
-		name = "Vein colour",
-		description = "Main colour of the glowing veins",
+		name = "Line colour",
+		description = "Main colour of the glowing lines",
 		position = 32,
 		section = customSection
 	)
@@ -110,7 +110,7 @@ public interface InfernalVariantsConfig extends Config
 	@ConfigItem(
 		keyName = "customCore",
 		name = "Glow colour",
-		description = "Colour at the hottest centre of the veins",
+		description = "Colour at the brightest centre of the lines",
 		position = 33,
 		section = customSection
 	)
@@ -120,15 +120,16 @@ public interface InfernalVariantsConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "customPattern",
-		name = "Pattern",
-		description = "The design painted on the custom cape",
-		position = 34,
+		keyName = "customBase",
+		name = "Design",
+		description = "Which design to recolour (for example Ice shards or Shadow smoke). "
+			+ "It keeps that design's pattern, motion and emblems in your colours",
+		position = 30,
 		section = customSection
 	)
-	default CapePattern customPattern()
+	default CapeStyle customBase()
 	{
-		return CapePattern.CRACKS;
+		return CapeStyle.ICE;
 	}
 
 	enum OthersMode

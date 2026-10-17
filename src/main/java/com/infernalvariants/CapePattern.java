@@ -45,7 +45,15 @@ public enum CapePattern
 	GRAIN("Wood grain", Surface.SOFT),
 	TENDRILS("Tendrils", Surface.SOFT),
 	FEATHERS("Feathers", Surface.SOFT),
-	BRAID("Braid", Surface.SOFT);
+	BRAID("Braid", Surface.SOFT),
+	// --- the concept-art family: dark downward scales with glowing chevron seams ---
+	CHEVRONS("Chevron scales", Surface.SCALE),
+	CHEVRON_DRIPS("Chevrons with drips", Surface.SCALE),
+	CHEVRON_LEAVES("Chevrons with leaves", Surface.SCALE),
+	CHEVRON_CRACKLE("Chevrons with crackle", Surface.SCALE),
+	CHANNEL("Centre channel", Surface.SCALE),
+	PLAIN_SCALES("Plain scales", Surface.SCALE),
+	HOLY_TRIM("Gold trim", Surface.CLOTH);
 
 	/** What the background between the glowing lines is made of; drives its shading. */
 	enum Surface
@@ -62,6 +70,8 @@ public enum CapePattern
 		SOFT,
 		/** Deep space: dark, no relief. */
 		SPACE,
+		/** Small overlapping downward scales, each lit from above (the concept-art look). */
+		SCALE,
 	}
 
 	private static final int N = CapeTextures.SIZE;
@@ -139,6 +149,20 @@ public enum CapePattern
 				return feathers();
 			case BRAID:
 				return braid();
+			case CHEVRONS:
+				return chevrons(0);
+			case CHEVRON_DRIPS:
+				return chevrons(1);
+			case CHEVRON_LEAVES:
+				return chevrons(2);
+			case CHEVRON_CRACKLE:
+				return chevrons(3);
+			case CHANNEL:
+				return channel();
+			case PLAIN_SCALES:
+				return plainScales();
+			case HOLY_TRIM:
+				return holyTrim();
 			default:
 				return cracks;
 		}
@@ -881,6 +905,174 @@ public enum CapePattern
 			}
 		}
 		return glowLines(c.values(), 0.45f);
+	}
+
+	/**
+	 * The scale texture under the concept-art styles: rows of small downward-pointing scales.
+	 * Returns the dim scale outlines (0-1).
+	 */
+	private static float[] scaleOutlines(float level)
+	{
+		Canvas c = new Canvas();
+		int w = 32, step = 16;
+		for (int row = 0; row < N / step + 2; row++)
+		{
+			float off = (row % 2 == 0) ? 0 : w / 2f;
+			for (int col = -1; col < N / w + 1; col++)
+			{
+				float cx = col * w + off + w / 2f, top = row * step - 4;
+				Path2D.Float sc = new Path2D.Float();
+				sc.moveTo(cx - w / 2f, top);
+				sc.quadTo(cx - w / 2f + 1, top + step * 1.1f, cx, top + step * 1.6f);
+				sc.quadTo(cx + w / 2f - 1, top + step * 1.1f, cx + w / 2f, top);
+				c.level(level);
+				c.stroke(sc, 1f);
+			}
+		}
+		return c.values();
+	}
+
+	/**
+	 * Concept-art chevrons: nested V-shaped seams running down the cape over small scales.
+	 * The V spans the full panel width (the texture's u runs edge to edge across the cape).
+	 * {@code extra}: 0 none, 1 drips hanging from each V, 2 leaves along the V, 3 crackle.
+	 */
+	/** How far the point of each chevron sits below its arms, in texels (about 45 degrees when worn). */
+	private static final float DEPTH = 64f;
+
+	private static float[] chevrons(int extra)
+	{
+		Canvas c = new Canvas();
+		Random r = new Random(77 + extra);
+		int spacing = 64;
+		for (int k = -2; k <= N / spacing; k++)
+		{
+			float y0 = k * spacing;
+			Path2D.Float v = new Path2D.Float();
+			// jagged V: edges high, point low in the middle, with small teeth like the drawings
+			v.moveTo(0, y0);
+			for (int x = 0; x <= N; x += 8)
+			{
+				float d = Math.abs(x - 64) / 64f;
+				float y = y0 + (1 - d) * DEPTH + ((x / 8) % 2 == 0 ? 0 : 4f);
+				v.lineTo(x, y);
+			}
+			c.level(1f);
+			c.stroke(v, 3f);
+			// a thinner echo halfway between the main chevrons
+			c.level(0.55f);
+			c.stroke(AffineTransform.getTranslateInstance(0, spacing / 2f).createTransformedShape(v), 1.3f);
+			if (extra == 1)
+			{
+				// blood: drips hanging off the V
+				for (int i = 0; i < 4; i++)
+				{
+					float x = 10 + r.nextFloat() * 108;
+					float d = Math.abs(x - 64) / 64f;
+					float y = y0 + (1 - d) * DEPTH + 2;
+					float len = 4 + r.nextFloat() * 9;
+					c.level(0.9f);
+					c.stroke(new Line2D.Float(x, y, x, y + len), 1.6f);
+					c.fill(new Ellipse2D.Float(x - 1.6f, y + len - 1, 3.2f, 3.2f * TALL));
+				}
+			}
+			else if (extra == 2)
+			{
+				// nature: leaves sprouting along the V
+				for (int i = 0; i < 4; i++)
+				{
+					float x = 12 + i * 32 + r.nextFloat() * 8;
+					float d = Math.abs(x - 64) / 64f;
+					float y = y0 + (1 - d) * DEPTH;
+					AffineTransform at = AffineTransform.getTranslateInstance(x, y);
+					at.rotate((i % 2 == 0 ? -1 : 1) * (0.6 + r.nextFloat() * 0.5));
+					at.scale(1, TALL * 0.8);
+					c.level(0.75f);
+					c.fill(at.createTransformedShape(new Ellipse2D.Float(0, -2.5f, 10, 5)));
+				}
+			}
+			else if (extra == 3)
+			{
+				// lightning: small crackles leaping off the V
+				for (int i = 0; i < 3; i++)
+				{
+					float x = 8 + r.nextFloat() * 112;
+					float d = Math.abs(x - 64) / 64f;
+					float y = y0 + (1 - d) * DEPTH;
+					Path2D.Float z = new Path2D.Float();
+					z.moveTo(x, y);
+					float zx = x, zy = y;
+					int dir = r.nextBoolean() ? 1 : -1;
+					for (int s = 0; s < 3; s++)
+					{
+						zx += dir * (2 + r.nextFloat() * 3);
+						zy += (s % 2 == 0 ? 4 : -2) + r.nextFloat() * 2;
+						z.lineTo(zx, zy);
+					}
+					c.level(0.85f);
+					c.stroke(z, 1.1f);
+				}
+			}
+		}
+		return combineWithScales(glowLines(c.values(), 0.55f), 0.18f);
+	}
+
+	/** Rune / Void: a glowing channel down the centre with faint side lines, over scales. */
+	private static float[] channel()
+	{
+		Canvas c = new Canvas();
+		c.level(1f);
+		c.stroke(new Line2D.Float(64, 0, 64, N), 2f);
+		c.level(0.5f);
+		c.stroke(new Line2D.Float(30, 0, 30, N), 1f);
+		c.stroke(new Line2D.Float(98, 0, 98, N), 1f);
+		// faint chevrons for structure
+		for (int k = -2; k < N / 32; k++)
+		{
+			float y0 = k * 32;
+			c.level(0.4f);
+			c.stroke(new Line2D.Float(0, y0, 64, y0 + DEPTH), 1.2f);
+			c.stroke(new Line2D.Float(64, y0 + DEPTH, 128, y0), 1.2f);
+		}
+		return combineWithScales(glowLines(c.values(), 0.5f), 0.18f);
+	}
+
+	/** Sandstone: just the scales, with soft seams and no bright lines. */
+	private static float[] plainScales()
+	{
+		float[] sc = scaleOutlines(1f);
+		float[] out = new float[sc.length];
+		float[] soft = boxBlur(sc, 1);
+		for (int i = 0; i < out.length; i++)
+		{
+			out[i] = CapeTextures.clamp(sc[i] * 0.5f + soft[i] * 0.4f);
+		}
+		return out;
+	}
+
+	/** Holy: gold trim down both edges and the centre, over faint feathered scales. */
+	private static float[] holyTrim()
+	{
+		Canvas c = new Canvas();
+		c.level(1f);
+		c.stroke(new Line2D.Float(3, 0, 3, N), 2.4f);
+		c.stroke(new Line2D.Float(125, 0, 125, N), 2.4f);
+		c.level(0.75f);
+		c.stroke(new Line2D.Float(9, 0, 9, N), 1f);
+		c.stroke(new Line2D.Float(119, 0, 119, N), 1f);
+		c.level(0.9f);
+		c.stroke(new Line2D.Float(64, 0, 64, N), 1.4f);
+		return combineWithScales(glowLines(c.values(), 0.5f), 0.12f);
+	}
+
+	private static float[] combineWithScales(float[] lines, float scaleLevel)
+	{
+		float[] sc = scaleOutlines(1f);
+		for (int i = 0; i < lines.length; i++)
+		{
+			lines[i] = Math.max(lines[i], sc[i] * scaleLevel);
+		}
+		return lines;
 	}
 
 	private static Shape starTall(float cx, float cy, float outer, float inner)

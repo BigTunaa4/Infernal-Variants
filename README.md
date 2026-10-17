@@ -1,6 +1,6 @@
 # Infernal Variants
 
-Repaint your infernal cape in 26 designs plus a custom one. Each style has its own pattern, from rune stones and scale mail to wave scallops and sunbird feathers, and everything flows down the cape. The lava-crack styles (Infernal, Dragonfire, Zamorak, Tormented) keep the real cape's exact crack pattern.
+Repaint your infernal cape in 26 designs, or recolour any of them yourself. The styles from the original concept art use dark scales with glowing chevron seams and their own touches (drips, leaves, crackles, rune circles, blue hem fire); Ice and Shadow have their own shards and smoke; the lore styles have their own patterns; and everything flows down the cape.
 
 ![animated preview](preview.gif)
 
@@ -9,19 +9,19 @@ Repaint your infernal cape in 26 designs plus a custom one. Each style has its o
 | Style | Look |
 |---|---|
 | Infernal (original) | Untouched lava |
-| Holy | Ivory cloth with a gold diamond lattice and stars, holy star emblem |
+| Holy | White cloth with gold trim down the edges and centre, holy star emblems |
 | Shadow | Drifting purple smoke wisps on black |
 | Ice | Shattered ice shards with frosted edges |
-| Blood | Blood running down the cape |
-| Nature | Climbing vines with leaves, leaf emblems |
-| Lightning | Forked lightning bolts over storm cloud |
-| Rune | Elemental rune stones (air, water, earth, fire) joined by glowing channels, rune circle emblems |
-| Dragonfire | Lava cracks burning orange, turning blue at the hem |
-| Void | Purple nebula and stars, void eye emblem |
-| Sandstone | Layered sandstone strata |
-| Crystal | Pale crystal facets with a soft prismatic sheen |
-| Roguelike | Quilted black leather with crimson stitching, hood sigil |
-| Golden | Polished gold scale mail |
+| Blood | Glowing red chevrons over dark scales, with blood dripping from each chevron |
+| Nature | Green chevrons with leaves sprouting along them, over mossy scales, leaf emblems |
+| Lightning | Yellow chevrons with crackles leaping off them |
+| Rune | Dark teal scales with a glowing channel and rune circles down the centre |
+| Dragonfire | Red-orange chevrons that burn blue toward the hem |
+| Void | Purple channel down the centre with the void eye emblem |
+| Sandstone | Weathered sandstone scales |
+| Crystal | Prismatic chevrons on dark crystal scales |
+| Roguelike | Dim crimson chevrons on black scales, hood sigil |
+| Golden | Gold chevrons on dark scales with a polished sheen |
 | Toxic | Bubbling venom ooze |
 | Corrupted | Jagged red crystal splinters |
 | Sanguine | Branching gold-and-blood vessels |
@@ -34,11 +34,13 @@ Repaint your infernal cape in 26 designs plus a custom one. Each style has its o
 | Tormented | Demon-green fire cracks with sparks |
 | Varlamore Sunset | Sunbird feathers fading from orange to dusk purple |
 | Twisted | Twisting braided strands, twisted bow emblem |
-| Custom | Your colours and your choice of pattern |
+| Custom | Any design (Ice shards, Shadow smoke or any other) in your own colours |
 
 ## Settings
 - **Cape style** — pick the design.
-- **Custom style** — plate, vein and glow colour pickers plus a pattern choice, used when the style is Custom.
+- **Custom style** — set Cape style to Custom, pick a design (Ice, Shadow or any other) and choose its base, line and glow colours. The design keeps its pattern, motion and emblems.
+
+![custom colours](custom.png)
 - **Animated veins** — each style has its own motion (see below).
 - **Emblems** — toggle the style emblems.
 - **Include infernal max cape** — also repaint the infernal max cape.
@@ -57,7 +59,7 @@ Emblems glow softly and breathe with the veins.
 
 ## Art details
 - Every pattern is drawn to look right when worn: the cape stretches its texture, so round motifs are pre-shaped to stay round.
-- Each pattern sits on its own material: lit rock (cracks, strata, rune stones), woven cloth (Holy, Saradomin, Roguelike), polished metal (Golden), flat crystal faces (Ice, Crystal, Corrupted) or soft surfaces.
+- Each pattern sits on its own material: small lit scales (the concept-art styles), lit rock (cracks, strata), woven cloth (Holy, Saradomin), polished metal, flat crystal faces (Ice, Corrupted) or soft surfaces (Shadow).
 - The glowing lines are two-tone: a hot core plus a glow that spills onto the surface in a second colour.
 
 ## How it works

@@ -277,7 +277,7 @@ class CapeOverlay extends Overlay
 		if (anyVisible && !style.isOriginal())
 		{
 			drawPanel(g, style, faces);
-			if (config.emblems() && style.emblem != CapeStyle.Emblem.NONE && faces.size() == PANEL_FACES_STANDARD)
+			if (config.emblems() && style.emblem() != CapeStyle.Emblem.NONE && faces.size() == PANEL_FACES_STANDARD)
 			{
 				drawEmblems(g, p, style, faces);
 			}
@@ -471,11 +471,11 @@ class CapeOverlay extends Overlay
 		}
 		boolean female = p.getPlayerComposition() != null && p.getPlayerComposition().getGender() == 1;
 		float[][][] anchors = female ? CapeAnchors.FEMALE : CapeAnchors.MALE;
-		int e = style.emblem.ordinal();
+		int e = style.emblem().ordinal();
 		String[] names = EMBLEM_LAYOUT_NAMES[e];
 		BufferedImage[] sprites = plugin.emblems(style);
 
-		if (style.emblem == CapeStyle.Emblem.RUNES)
+		if (style.emblem() == CapeStyle.Emblem.RUNES)
 		{
 			// the thin channel joining the rune circles
 			float[] top = anchorPoint(ordered, anchors[CapeAnchors.indexOf("C1")][0]);

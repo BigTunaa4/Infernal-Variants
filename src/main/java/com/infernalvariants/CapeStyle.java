@@ -53,8 +53,8 @@ public enum CapeStyle
 		7, 3, 30, 7, 3, Special.GRAIN, Emblem.NONE),
 
 	CRYSTAL("Crystal",
-		grad(0f, 0xA2C4D4, .3f, 0x84B0C8, .6f, 0x6EDCE6, 1f, 0xF0FFFF),
-		34, 1, 44, 34, 4, Special.PRISM, Emblem.NONE),
+		grad(0f, 0x18202C, .3f, 0x2A4A66, .6f, 0x7ADCE8, 1f, 0xF6FFFF),
+		34, 1, 14, 34, 4, Special.PRISM, Emblem.NONE),
 
 	ROGUELIKE("Roguelike",
 		grad(0f, 0x0E0C0C, .35f, 0x1E0E0E, .65f, 0x78141A, 1f, 0xC42E2E),
@@ -160,8 +160,25 @@ public enum CapeStyle
 		this.emblem = emblem;
 	}
 
-	/** Pattern chosen for the Custom style (set from the plugin config). */
-	static CapePattern customPattern = CapePattern.CRACKS;
+	/** The design the Custom style borrows (pattern, motion, details), recoloured with the custom colours. */
+	static CapeStyle customBase = ICE;
+
+	private CapeStyle base()
+	{
+		return this == CUSTOM && customBase != CUSTOM && customBase != null ? customBase : this;
+	}
+
+	/** Texture treatment; Custom uses its base design's. */
+	Special special()
+	{
+		return this == CUSTOM ? base().special : special;
+	}
+
+	/** Emblem set; Custom uses its base design's. */
+	Emblem emblem()
+	{
+		return this == CUSTOM ? base().emblem : emblem;
+	}
 
 	/** The design painted on the panel for this style. */
 	CapePattern pattern()
@@ -169,29 +186,29 @@ public enum CapeStyle
 		switch (this)
 		{
 			case HOLY:
-				return CapePattern.LATTICE;
+				return CapePattern.HOLY_TRIM;
 			case SHADOW:
 				return CapePattern.SMOKE;
 			case ICE:
 				return CapePattern.SHARDS;
 			case BLOOD:
-				return CapePattern.DRIPS;
+				return CapePattern.CHEVRON_DRIPS;
 			case NATURE:
-				return CapePattern.VINES;
+				return CapePattern.CHEVRON_LEAVES;
 			case LIGHTNING:
-				return CapePattern.BOLTS;
+				return CapePattern.CHEVRON_CRACKLE;
 			case RUNE:
-				return CapePattern.RUNIC;
+				return CapePattern.CHANNEL;
 			case VOID:
-				return CapePattern.NEBULA;
+				return CapePattern.CHANNEL;
 			case SANDSTONE:
-				return CapePattern.STRATA;
+				return CapePattern.PLAIN_SCALES;
 			case CRYSTAL:
-				return CapePattern.FACETS;
+				return CapePattern.CHEVRONS;
 			case ROGUELIKE:
-				return CapePattern.QUILT;
+				return CapePattern.CHEVRONS;
 			case GOLDEN:
-				return CapePattern.SCALES;
+				return CapePattern.CHEVRONS;
 			case TOXIC:
 				return CapePattern.BUBBLES;
 			case CORRUPTED:
@@ -212,10 +229,12 @@ public enum CapeStyle
 				return CapePattern.FEATHERS;
 			case TWISTED:
 				return CapePattern.BRAID;
+			case DRAGONFIRE:
+				return CapePattern.CHEVRONS;
 			case CUSTOM:
-				return customPattern;
+				return base() == CUSTOM ? CapePattern.CRACKS : base().pattern();
 			default:
-				// Infernal, Dragonfire, Zamorak, Tormented keep the lava cracks
+				// Infernal, Zamorak and Tormented keep the lava cracks
 				return CapePattern.CRACKS;
 		}
 	}
