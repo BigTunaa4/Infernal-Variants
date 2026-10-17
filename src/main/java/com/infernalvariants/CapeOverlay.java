@@ -17,9 +17,6 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.WeakHashMap;
 import javax.inject.Inject;
 import net.runelite.api.Actor;
 import net.runelite.api.Client;
@@ -93,10 +90,7 @@ class CapeOverlay extends Overlay
 	private final Client client;
 	private final InfernalVariantsPlugin plugin;
 	private final InfernalVariantsConfig config;
-	private final Random rng = new Random();
 
-	private final Map<Player, CapeParticles> emitters = new WeakHashMap<>();
-	private long lastFrameNanos;
 
 	// scratch buffers, grown as needed
 	private int[] sx = new int[0], sy = new int[0];
@@ -115,7 +109,6 @@ class CapeOverlay extends Overlay
 
 	void reset()
 	{
-		emitters.clear();
 	}
 
 	/** One face of the cape panel, ready to draw. */
@@ -128,17 +121,11 @@ class CapeOverlay extends Overlay
 		float shade;
 		float hemness;
 		boolean visible;
-		// local-space normal, used to push particles off the surface
-		float nx, ny, nh;
 	}
 
 	@Override
 	public Dimension render(Graphics2D g)
 	{
-		long now = System.nanoTime();
-		float dt = lastFrameNanos == 0 ? 0f : Math.min(0.1f, (now - lastFrameNanos) / 1e9f);
-		lastFrameNanos = now;
-
 		if (!plugin.texturesReady())
 		{
 			return null;
@@ -169,24 +156,21 @@ class CapeOverlay extends Overlay
 			CapeStyle style = plugin.styleFor(p);
 			if (style == null)
 			{
-				emitters.remove(p);
 				continue;
 			}
-			boolean effects = config.effects() && (isLocal || config.othersEffects());
 			try
 			{
-				drawCape(g, wv, p, style, effects, dt);
+				drawCape(g, wv, p, style);
 			}
 			catch (RuntimeException ex)
 			{
 				// never let a bad frame take the overlay down
-				emitters.remove(p);
 			}
 		}
 		return null;
 	}
 
-	private void drawCape(Graphics2D g, WorldView wv, Player p, CapeStyle style, boolean effects, float dt)
+	private void drawCape(Graphics2D g, WorldView wv, Player p, CapeStyle style)
 	{
 		LocalPoint lp = p.getLocalLocation();
 		Model model = p.getModel();
@@ -274,9 +258,6 @@ class CapeOverlay extends Overlay
 			}
 			float light = 0.2f * nx - 0.7f * ny + 0.65f * nz;
 			pf.shade = 0.74f + 0.26f * Math.max(0f, Math.min(1f, light));
-			pf.nx = nx * rc + nz * rs;
-			pf.ny = nz * rc - nx * rs;
-			pf.nh = ny;
 
 			if (sx[a] == Integer.MIN_VALUE || sx[b] == Integer.MIN_VALUE || sx[c] == Integer.MIN_VALUE)
 			{
@@ -302,14 +283,6 @@ class CapeOverlay extends Overlay
 			}
 		}
 
-		if (effects)
-		{
-			drawParticles(g, wv, p, style, faces, dt, playerDepth, cam);
-		}
-		else
-		{
-			emitters.remove(p);
-		}
 		g.setClip(oldClip);
 	}
 
@@ -327,9 +300,9 @@ class CapeOverlay extends Overlay
 		StyleLook look = plugin.look(style);
 		boolean animate = config.flowing();
 		float t = client.getGameCycle() / 50f;
-		// each style flows at its own pace (some barely at all)
+		// every style's veins flow down the cape, each at its own pace (texture v runs collar -> hem)
 		float scroll = animate ? ((t * look.flowSpeed) % TEX + TEX) % TEX : 0f;
-		Rectangle2D.Float anchor = new Rectangle2D.Float(0, -scroll, TEX, TEX);
+		Rectangle2D.Float anchor = new Rectangle2D.Float(0, scroll, TEX, TEX);
 		TexturePaint paint = new TexturePaint(tex, anchor);
 		TexturePaint hemPaint = hem == null ? null : new TexturePaint(hem, anchor);
 		TexturePaint glowPaint = glow == null ? null : new TexturePaint(glow, anchor);
@@ -584,112 +557,6 @@ class CapeOverlay extends Overlay
 			spec[1] * sx[f.a] + spec[2] * sx[f.b] + spec[3] * sx[f.c],
 			spec[1] * sy[f.a] + spec[2] * sy[f.b] + spec[3] * sy[f.c],
 		};
-	}
-
-	// ---------------------------------------------------------------- particles
-
-	private void drawParticles(Graphics2D g, WorldView wv, Player p, CapeStyle style, List<PanelFace> faces,
-		float dt, float playerDepth, Camera cam)
-	{
-		CapeParticles em = emitters.computeIfAbsent(p, k -> new CapeParticles());
-		em.update(dt);
-
-		float rate = CapeParticles.rate(style.effect) * config.intensity().multiplier;
-		int spawns = (int) em.takeSpawns(dt, rate);
-		boolean hem = CapeParticles.fromHem(style.effect);
-		boolean top = CapeParticles.fromTop(style.effect);
-		for (int s = 0; s < spawns; s++)
-		{
-			PanelFace f = pickFace(faces, hem, top);
-			if (f == null)
-			{
-				break;
-			}
-			float w0 = rng.nextFloat(), w1 = rng.nextFloat();
-			if (w0 + w1 > 1f)
-			{
-				w0 = 1f - w0;
-				w1 = 1f - w1;
-			}
-			float w2 = 1f - w0 - w1;
-			em.spawn(style,
-				w0 * lx[f.a] + w1 * lx[f.b] + w2 * lx[f.c],
-				w0 * ly[f.a] + w1 * ly[f.b] + w2 * ly[f.c],
-				w0 * lh[f.a] + w1 * lh[f.b] + w2 * lh[f.c],
-				f.nx, f.ny, f.nh, f.hemness);
-		}
-
-		List<CapeParticles.Particle> list = em.list();
-		int n = list.size();
-		if (n == 0)
-		{
-			return;
-		}
-		float[] px = new float[n], py = new float[n], ph = new float[n];
-		int[] ox = new int[n], oy = new int[n];
-		for (int i = 0; i < n; i++)
-		{
-			CapeParticles.Particle q = list.get(i);
-			px[i] = q.x;
-			py[i] = q.y;
-			ph[i] = q.h;
-		}
-		Perspective.modelToCanvas(client, wv, n, 0, 0, 0, 0, px, py, ph, ox, oy);
-
-		Shape hull = p.getConvexHull();
-		float scale = client.getScale();
-		for (int i = 0; i < n; i++)
-		{
-			if (ox[i] == Integer.MIN_VALUE)
-			{
-				continue;
-			}
-			CapeParticles.Particle q = list.get(i);
-			float d = cam.depth(q.x, q.y, q.h);
-			if (d < 50)
-			{
-				continue;
-			}
-			// hide particles that are behind the player's body from this camera angle
-			if (hull != null && d > playerDepth + 6 && hull.contains(ox[i], oy[i]))
-			{
-				continue;
-			}
-			int[] ax = null, ay = null;
-			if (q.kind == CapeParticles.Kind.ARC && q.arc != null)
-			{
-				int m = q.arc.length / 3;
-				float[] axf = new float[m], ayf = new float[m], ahf = new float[m];
-				for (int j = 0; j < m; j++)
-				{
-					axf[j] = q.x + q.arc[j * 3];
-					ayf[j] = q.y + q.arc[j * 3 + 1];
-					ahf[j] = q.h + q.arc[j * 3 + 2];
-				}
-				ax = new int[m];
-				ay = new int[m];
-				Perspective.modelToCanvas(client, wv, m, 0, 0, 0, 0, axf, ayf, ahf, ax, ay);
-			}
-			CapeParticles.draw(g, q, ox[i], oy[i], scale / d, ax, ay);
-		}
-	}
-
-	private PanelFace pickFace(List<PanelFace> faces, boolean hem, boolean top)
-	{
-		for (int tries = 0; tries < 8; tries++)
-		{
-			PanelFace f = faces.get(rng.nextInt(faces.size()));
-			if (hem && f.hemness < 0.7f)
-			{
-				continue;
-			}
-			if (top && f.hemness > 0.55f)
-			{
-				continue;
-			}
-			return f;
-		}
-		return faces.get(rng.nextInt(faces.size()));
 	}
 
 	// ---------------------------------------------------------------- occlusion

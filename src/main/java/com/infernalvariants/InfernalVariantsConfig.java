@@ -12,13 +12,6 @@ public interface InfernalVariantsConfig extends Config
 	String GROUP = "infernalvariants";
 
 	@ConfigSection(
-		name = "Effects",
-		description = "Particle effects around the cape",
-		position = 10
-	)
-	String effectsSection = "effects";
-
-	@ConfigSection(
 		name = "Other players",
 		description = "Show variants on other players' infernal capes",
 		position = 20
@@ -78,30 +71,6 @@ public interface InfernalVariantsConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "effects",
-		name = "Cape effects",
-		description = "Small particle effects that match the style (embers, snow, leaves, sparks...)",
-		position = 11,
-		section = effectsSection
-	)
-	default boolean effects()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-		keyName = "intensity",
-		name = "Effect amount",
-		description = "How many particles the cape gives off",
-		position = 12,
-		section = effectsSection
-	)
-	default Intensity intensity()
-	{
-		return Intensity.NORMAL;
-	}
-
-	@ConfigItem(
 		keyName = "others",
 		name = "Other players' capes",
 		description = "Off: only your cape. Same style: everyone's infernal cape uses your style. "
@@ -112,18 +81,6 @@ public interface InfernalVariantsConfig extends Config
 	default OthersMode others()
 	{
 		return OthersMode.OFF;
-	}
-
-	@ConfigItem(
-		keyName = "othersEffects",
-		name = "Effects on others",
-		description = "Also show particle effects on other players' capes",
-		position = 22,
-		section = othersSection
-	)
-	default boolean othersEffects()
-	{
-		return false;
 	}
 
 	@ConfigItem(
@@ -160,32 +117,6 @@ public interface InfernalVariantsConfig extends Config
 	default Color customCore()
 	{
 		return new Color(0xE6F6FF);
-	}
-
-	@ConfigItem(
-		keyName = "customEffect",
-		name = "Effect",
-		description = "Particle effect for the custom cape",
-		position = 34,
-		section = customSection
-	)
-	default CapeStyle.Effect customEffect()
-	{
-		return CapeStyle.Effect.STYLED_EMBERS;
-	}
-
-	enum Intensity
-	{
-		SUBTLE(0.5f),
-		NORMAL(1f),
-		STRONG(1.7f);
-
-		final float multiplier;
-
-		Intensity(float multiplier)
-		{
-			this.multiplier = multiplier;
-		}
 	}
 
 	enum OthersMode

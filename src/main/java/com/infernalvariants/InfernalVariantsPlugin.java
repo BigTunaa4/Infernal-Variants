@@ -28,8 +28,8 @@ import net.runelite.client.ui.overlay.OverlayManager;
 
 @PluginDescriptor(
 	name = "Infernal Variants",
-	description = "Custom infernal cape designs (Holy, Ice, Dragonfire, Rune, Void and more) with matching cape effects",
-	tags = {"infernal", "cape", "cosmetic", "recolor", "recolour", "fire", "inferno", "effects"}
+	description = "Custom infernal cape designs (Holy, Ice, Dragonfire, Rune, Void and more) with animated veins",
+	tags = {"infernal", "cape", "cosmetic", "recolor", "recolour", "fire", "inferno"}
 )
 public class InfernalVariantsPlugin extends Plugin
 {
@@ -304,7 +304,6 @@ public class InfernalVariantsPlugin extends Plugin
 		float[] v = java.awt.Color.RGBtoHSB((vein >> 16) & 255, (vein >> 8) & 255, vein & 255, null);
 		c.glowHue = Math.round(v[0] * 64) & 63;
 		c.glowSat = Math.round(v[1] * 7);
-		c.effect = config.customEffect();
 
 		veinTextures.remove(c);
 		hemTextures.remove(c);
