@@ -13,6 +13,7 @@ import net.runelite.api.ItemComposition;
 import net.runelite.api.Player;
 import net.runelite.api.PlayerComposition;
 import net.runelite.api.TextureProvider;
+import net.runelite.api.events.BeforeRender;
 import net.runelite.api.events.ClientTick;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.PostItemComposition;
@@ -73,6 +74,8 @@ public class InfernalVariantsPlugin extends Plugin
 
 	/** Players whose cape we've put a colour override on, and the style it carries. */
 	private final Map<Player, CapeStyle> applied = new WeakHashMap<>();
+	/** Hides the real lava panel while each frame is drawn, so only the repainted design shows. */
+	private final PanelHider hider = new PanelHider();
 
 	@Provides
 	InfernalVariantsConfig provideConfig(ConfigManager configManager)
@@ -100,6 +103,7 @@ public class InfernalVariantsPlugin extends Plugin
 		overlay.reset();
 		clientThread.invoke(() ->
 		{
+			hider.restore();
 			for (Map.Entry<Player, CapeStyle> e : applied.entrySet())
 			{
 				removeOverride(e.getKey());
@@ -153,6 +157,47 @@ public class InfernalVariantsPlugin extends Plugin
 		// colour override can repaint them. On its own this changes nothing visually.
 		item.setColorToReplace(InfernalColors.ALL.clone());
 		item.setColorToReplaceWith(InfernalColors.ALL.clone());
+	}
+
+	/**
+	 * Just before the scene is drawn: hide the lava panel of every cape we repaint, so it can't show
+	 * through the design. The overlay puts it back once it has painted the design (see
+	 * {@link #restorePanels()}); anything left over is put back here first.
+	 */
+	@Subscribe
+	public void onBeforeRender(BeforeRender e)
+	{
+		hider.restore();
+		if (!texturesReady())
+		{
+			return;
+		}
+		try
+		{
+			Player local = client.getLocalPlayer();
+			for (Player p : client.getTopLevelWorldView().players())
+			{
+				if (p == null || (p != local && config.others() == InfernalVariantsConfig.OthersMode.OFF))
+				{
+					continue;
+				}
+				CapeStyle style = styleFor(p);
+				if (style != null && !style.isOriginal())
+				{
+					hider.hide(p.getModel());
+				}
+			}
+		}
+		catch (RuntimeException ex)
+		{
+			hider.restore(); // never leave a cape half hidden
+		}
+	}
+
+	/** Puts the lava panels back once the frame is drawn. */
+	void restorePanels()
+	{
+		hider.restore();
 	}
 
 	@Subscribe

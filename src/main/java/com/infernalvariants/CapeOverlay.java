@@ -19,11 +19,16 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.inject.Inject;
 import net.runelite.api.Actor;
+import net.runelite.api.DecorativeObject;
+import net.runelite.api.GameObject;
 import net.runelite.api.Client;
 import net.runelite.api.Model;
 import net.runelite.api.NPC;
 import net.runelite.api.Perspective;
 import net.runelite.api.Player;
+import net.runelite.api.Scene;
+import net.runelite.api.Tile;
+import net.runelite.api.WallObject;
 import net.runelite.api.WorldView;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.client.ui.overlay.Overlay;
@@ -90,6 +95,7 @@ class CapeOverlay extends Overlay
 	private final Client client;
 	private final InfernalVariantsPlugin plugin;
 	private final InfernalVariantsConfig config;
+	private final Mips mips = new Mips();
 
 
 	// scratch buffers, grown as needed
@@ -109,6 +115,7 @@ class CapeOverlay extends Overlay
 
 	void reset()
 	{
+		mips.clear();
 	}
 
 	/** One face of the cape panel, ready to draw. */
@@ -126,6 +133,19 @@ class CapeOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D g)
 	{
+		try
+		{
+			return paint(g);
+		}
+		finally
+		{
+			// the scene is drawn: give the real lava panels back (they were hidden for this frame only)
+			plugin.restorePanels();
+		}
+	}
+
+	private Dimension paint(Graphics2D g)
+	{
 		if (!plugin.texturesReady())
 		{
 			return null;
@@ -138,8 +158,9 @@ class CapeOverlay extends Overlay
 		}
 
 		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
-		g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
-		g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED);
+		// smooth the design across the cape (sharp up close, no shimmering pixels zoomed out; see Mips)
+		g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+		g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
 
 		WorldView wv = client.getTopLevelWorldView();
 		for (Player p : wv.players())
@@ -269,9 +290,30 @@ class CapeOverlay extends Overlay
 			anyVisible |= pf.visible;
 		}
 
+		if (!anyVisible)
+		{
+			return;
+		}
+		// where the cape is on screen, so only things that actually overlap it are cut out
+		int bx0 = Integer.MAX_VALUE, by0 = Integer.MAX_VALUE, bx1 = Integer.MIN_VALUE, by1 = Integer.MIN_VALUE;
+		for (PanelFace pf : faces)
+		{
+			if (pf.visible)
+			{
+				for (int v : new int[]{pf.a, pf.b, pf.c})
+				{
+					bx0 = Math.min(bx0, sx[v]);
+					by0 = Math.min(by0, sy[v]);
+					bx1 = Math.max(bx1, sx[v]);
+					by1 = Math.max(by1, sy[v]);
+				}
+			}
+		}
+		Rectangle capeBounds = new Rectangle(bx0 - 2, by0 - 2, bx1 - bx0 + 4, by1 - by0 + 4);
+
 		Shape oldClip = g.getClip();
 		float playerDepth = cam.depth(lp.getX(), lp.getY(), baseZ - 100);
-		Shape clip = clipAroundBlockers(wv, p, playerDepth, cam, oldClip);
+		Shape clip = clipAroundBlockers(wv, p, playerDepth, cam, oldClip, capeBounds);
 		g.setClip(clip);
 
 		if (anyVisible && !style.isOriginal())
@@ -303,9 +345,11 @@ class CapeOverlay extends Overlay
 		// every style's veins flow down the cape, each at its own pace (texture v runs collar -> hem)
 		float scroll = animate ? ((t * look.flowSpeed) % TEX + TEX) % TEX : 0f;
 		Rectangle2D.Float anchor = new Rectangle2D.Float(0, scroll, TEX, TEX);
-		TexturePaint paint = new TexturePaint(tex, anchor);
-		TexturePaint hemPaint = hem == null ? null : new TexturePaint(hem, anchor);
-		TexturePaint glowPaint = glow == null ? null : new TexturePaint(glow, anchor);
+		// each texture at full size and smaller, chosen per triangle by how big it is on screen
+		BufferedImage[] texMips = mips.of(tex), hemMips = mips.of(hem), glowMips = mips.of(glow);
+		TexturePaint[] paints = new TexturePaint[texMips.length];
+		TexturePaint[] hemPaints = hemMips == null ? null : new TexturePaint[hemMips.length];
+		TexturePaint[] glowPaints = glowMips == null ? null : new TexturePaint[glowMips.length];
 
 		faces.sort((x, y) -> Float.compare(y.depth, x.depth));
 		AffineTransform base = g.getTransform();
@@ -322,6 +366,10 @@ class CapeOverlay extends Overlay
 				continue;
 			}
 			Path2D.Float tri = grownTexTriangle(pf);
+			int level = Mips.level(texArea(pf), screenArea(pf), texMips.length);
+			TexturePaint paint = paintAt(paints, texMips, level, anchor);
+			TexturePaint hemPaint = paintAt(hemPaints, hemMips, level, anchor);
+			TexturePaint glowPaint = paintAt(glowPaints, glowMips, level, anchor);
 			g.setTransform(base);
 			g.transform(at);
 			g.setPaint(paint);
@@ -358,6 +406,36 @@ class CapeOverlay extends Overlay
 			}
 		}
 		g.setTransform(base);
+	}
+
+	/** The paint for this texture at this size, made the first time it's needed this frame. */
+	private static TexturePaint paintAt(TexturePaint[] paints, BufferedImage[] images, int level, Rectangle2D.Float anchor)
+	{
+		if (paints == null || images == null)
+		{
+			return null;
+		}
+		int l = Math.min(level, images.length - 1);
+		if (paints[l] == null)
+		{
+			paints[l] = new TexturePaint(images[l], anchor);
+		}
+		return paints[l];
+	}
+
+	/** How many texture pixels the face covers. */
+	private static float texArea(PanelFace pf)
+	{
+		float du1 = (pf.u[1] - pf.u[0]) * TEX, dv1 = (pf.v[1] - pf.v[0]) * TEX;
+		float du2 = (pf.u[2] - pf.u[0]) * TEX, dv2 = (pf.v[2] - pf.v[0]) * TEX;
+		return Math.abs(du1 * dv2 - du2 * dv1) / 2f;
+	}
+
+	/** How many screen pixels the face covers. */
+	private float screenArea(PanelFace pf)
+	{
+		long cross = (long) (sx[pf.b] - sx[pf.a]) * (sy[pf.c] - sy[pf.a]) - (long) (sy[pf.b] - sy[pf.a]) * (sx[pf.c] - sx[pf.a]);
+		return Math.abs(cross) / 2f;
 	}
 
 	/** Affine transform taking texture pixels (u*128, v*128) to screen coordinates for one face. */
@@ -565,22 +643,122 @@ class CapeOverlay extends Overlay
 	 * Our drawing sits on top of the scene, so carve out anybody standing between the camera and
 	 * this cape (other players, NPCs, pets) so they still appear in front of it.
 	 */
-	private Shape clipAroundBlockers(WorldView wv, Player owner, float ownerDepth, Camera cam, Shape current)
+	private Shape clipAroundBlockers(WorldView wv, Player owner, float ownerDepth, Camera cam, Shape current,
+		Rectangle capeBounds)
 	{
 		LocalPoint ol = owner.getLocalLocation();
 		Area area = null;
 		for (Player other : wv.players())
 		{
-			area = carve(area, other, owner, ol, ownerDepth, cam, current);
+			area = carve(area, other, owner, ol, ownerDepth, cam, current, capeBounds);
 		}
 		for (NPC npc : wv.npcs())
 		{
-			area = carve(area, npc, owner, ol, ownerDepth, cam, current);
+			area = carve(area, npc, owner, ol, ownerDepth, cam, current, capeBounds);
 		}
+		area = carveScenery(area, wv, ol, ownerDepth, cam, current, capeBounds);
 		return area == null ? current : area;
 	}
 
-	private Area carve(Area area, Actor a, Player owner, LocalPoint ol, float ownerDepth, Camera cam, Shape current)
+	/** How many tiles around the player to look for scenery standing in front of the cape. */
+	private static final int SCENERY_RANGE = 6;
+
+	/**
+	 * Scenery between the camera and the cape (statues, trees, walls, pillars, wall decorations): cut
+	 * it out of the drawing, so the cape stays behind it like the rest of the player.
+	 */
+	private Area carveScenery(Area area, WorldView wv, LocalPoint ol, float ownerDepth, Camera cam, Shape current,
+		Rectangle capeBounds)
+	{
+		Scene scene = wv.getScene();
+		Tile[][][] tiles = scene == null ? null : scene.getTiles();
+		int plane = wv.getPlane();
+		if (tiles == null || plane < 0 || plane >= tiles.length)
+		{
+			return area;
+		}
+		int ox = ol.getSceneX(), oy = ol.getSceneY();
+		for (int x = ox - SCENERY_RANGE; x <= ox + SCENERY_RANGE; x++)
+		{
+			for (int y = oy - SCENERY_RANGE; y <= oy + SCENERY_RANGE; y++)
+			{
+				if (x < 0 || y < 0 || x >= tiles[plane].length || y >= tiles[plane][x].length)
+				{
+					continue;
+				}
+				Tile tile = tiles[plane][x][y];
+				if (tile == null)
+				{
+					continue;
+				}
+				GameObject[] objects = tile.getGameObjects();
+				if (objects != null)
+				{
+					for (GameObject o : objects)
+					{
+						if (o == null || o.getRenderable() instanceof Actor || o.getSceneMinLocation() == null
+							|| o.getSceneMinLocation().getX() != x || o.getSceneMinLocation().getY() != y)
+						{
+							continue; // players and NPCs are handled above; big objects once, from their corner tile
+						}
+						area = carveIfInFront(area, o.getConvexHull(), o.getX(), o.getY(), plane, ol, ownerDepth, cam,
+							current, capeBounds);
+					}
+				}
+				WallObject wall = tile.getWallObject();
+				if (wall != null)
+				{
+					area = carveIfInFront(area, wall.getConvexHull(), wall.getX(), wall.getY(), plane, ol, ownerDepth,
+						cam, current, capeBounds);
+					area = carveIfInFront(area, wall.getConvexHull2(), wall.getX(), wall.getY(), plane, ol, ownerDepth,
+						cam, current, capeBounds);
+				}
+				DecorativeObject deco = tile.getDecorativeObject();
+				if (deco != null)
+				{
+					area = carveIfInFront(area, deco.getConvexHull(), deco.getX(), deco.getY(), plane, ol, ownerDepth,
+						cam, current, capeBounds);
+					area = carveIfInFront(area, deco.getConvexHull2(), deco.getX(), deco.getY(), plane, ol, ownerDepth,
+						cam, current, capeBounds);
+				}
+			}
+		}
+		return area;
+	}
+
+	private Area carveIfInFront(Area area, Shape hull, int x, int y, int plane, LocalPoint ol, float ownerDepth,
+		Camera cam, Shape current, Rectangle capeBounds)
+	{
+		if (hull == null || !hull.intersects(capeBounds))
+		{
+			return area;
+		}
+		if (x == ol.getX() && y == ol.getY())
+		{
+			return area; // on the player's own tile: can't tell front from back
+		}
+		LocalPoint at = new LocalPoint(x, y, ol.getWorldView());
+		float d = cam.depth(x, y, Perspective.getTileHeight(client, at, plane) - 80);
+		if (d >= ownerDepth - 24)
+		{
+			return area; // behind the player, or level with them
+		}
+		if (area == null)
+		{
+			area = new Area(startBounds(current));
+		}
+		area.subtract(new Area(hull));
+		return area;
+	}
+
+	private Rectangle startBounds(Shape current)
+	{
+		return current != null ? current.getBounds()
+			: new Rectangle(client.getViewportXOffset(), client.getViewportYOffset(), client.getViewportWidth(), client.getViewportHeight());
+	}
+
+	private Area carve(Area area, Actor a, Player owner, LocalPoint ol, float ownerDepth, Camera cam, Shape current,
+		Rectangle capeBounds)
 	{
 		if (a == null || a == owner)
 		{
@@ -597,15 +775,13 @@ class CapeOverlay extends Overlay
 			return area;
 		}
 		Shape hull = a.getConvexHull();
-		if (hull == null)
+		if (hull == null || !hull.intersects(capeBounds))
 		{
 			return area;
 		}
 		if (area == null)
 		{
-			Rectangle bounds = current != null ? current.getBounds()
-				: new Rectangle(client.getViewportXOffset(), client.getViewportYOffset(), client.getViewportWidth(), client.getViewportHeight());
-			area = new Area(bounds);
+			area = new Area(startBounds(current));
 		}
 		area.subtract(new Area(hull));
 		return area;
