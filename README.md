@@ -1,6 +1,6 @@
 # Infernal Variants
 
-Repaint your infernal cape in 14 designs — each with its own effect — while keeping the exact crack pattern of the real cape.
+Repaint your infernal cape in 26 designs (plus your own custom colours) — each with its own effect — while keeping the exact crack pattern of the real cape.
 
 ![preview](preview.png)
 
@@ -20,9 +20,23 @@ Repaint your infernal cape in 14 designs — each with its own effect — while 
 | Crystal | Pale crystal with a prismatic shimmer | Crystal glints |
 | Roguelike | Black with dim crimson veins, hood sigil | Low smoke |
 | Golden | Burnished amber with a polished sheen | Gold glints |
+| Toxic | Venom-green veins on teal-black | Venom drips and specks |
+| Corrupted | Crimson crystal shards | Crimson glints |
+| Sanguine | Deep red plates, gold veins | Blood mist |
+| Amascut | Sandstone gold, sun disc emblem | Trickling sand |
+| Tidal | Deep blue, sea-green veins | Sea spray |
+| Saradomin | Blue plates, gold veins, Saradomin star | Holy motes |
+| Zamorak | Red-black, Zamorak mark | Red embers |
+| Guthix | Earthy stone, green veins, balance emblem | Leaves |
+| Abyssal | Maroon with pink-red veins | Abyssal mist |
+| Tormented | Black with demon-green veins | Green hem fire |
+| Varlamore Sunset | Orange veins fading to dusk purple at the hem | Embers |
+| Twisted | Dark green, twisted bow emblem | Green mist |
+| Custom | Your plate, vein and glow colours | Any effect you pick |
 
 ## Settings
 - **Cape style** — pick the design.
+- **Custom style** — plate, vein and glow colour pickers plus an effect, used when the style is Custom.
 - **Flowing veins** — the veins slowly flow like the original lava.
 - **Emblems** — toggle the style emblems.
 - **Include infernal max cape** — also repaint the infernal max cape.

@@ -1,5 +1,6 @@
 package com.infernalvariants;
 
+import java.awt.Color;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
@@ -23,6 +24,14 @@ public interface InfernalVariantsConfig extends Config
 		position = 20
 	)
 	String othersSection = "others";
+
+	@ConfigSection(
+		name = "Custom style",
+		description = "Colours used when the cape style is set to Custom",
+		position = 30,
+		closedByDefault = true
+	)
+	String customSection = "custom";
 
 	@ConfigItem(
 		keyName = "style",
@@ -115,6 +124,54 @@ public interface InfernalVariantsConfig extends Config
 	default boolean othersEffects()
 	{
 		return false;
+	}
+
+	@ConfigItem(
+		keyName = "customPlate",
+		name = "Plate colour",
+		description = "Colour of the rock plates between the veins",
+		position = 31,
+		section = customSection
+	)
+	default Color customPlate()
+	{
+		return new Color(0x14141E);
+	}
+
+	@ConfigItem(
+		keyName = "customVein",
+		name = "Vein colour",
+		description = "Main colour of the glowing veins",
+		position = 32,
+		section = customSection
+	)
+	default Color customVein()
+	{
+		return new Color(0x3CA0FF);
+	}
+
+	@ConfigItem(
+		keyName = "customCore",
+		name = "Glow colour",
+		description = "Colour at the hottest centre of the veins",
+		position = 33,
+		section = customSection
+	)
+	default Color customCore()
+	{
+		return new Color(0xE6F6FF);
+	}
+
+	@ConfigItem(
+		keyName = "customEffect",
+		name = "Effect",
+		description = "Particle effect for the custom cape",
+		position = 34,
+		section = customSection
+	)
+	default CapeStyle.Effect customEffect()
+	{
+		return CapeStyle.Effect.STYLED_EMBERS;
 	}
 
 	enum Intensity

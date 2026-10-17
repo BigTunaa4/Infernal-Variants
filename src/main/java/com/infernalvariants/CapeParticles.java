@@ -97,6 +97,20 @@ final class CapeParticles
 				return 5;
 			case GOLD:
 				return 7;
+			case VENOM:
+				return 7;
+			case MIST:
+				return 6;
+			case DROPLETS:
+				return 6;
+			case FLAMES:
+				return 11;
+			case STYLED_MOTES:
+				return 6;
+			case STYLED_EMBERS:
+				return 10;
+			case STYLED_GLINTS:
+				return 6;
 			default:
 				return 6;
 		}
@@ -105,7 +119,8 @@ final class CapeParticles
 	/** True for effects that should come off the bottom of the cape. */
 	static boolean fromHem(CapeStyle.Effect e)
 	{
-		return e == CapeStyle.Effect.DRIPS || e == CapeStyle.Effect.SAND || e == CapeStyle.Effect.SMOKE;
+		return e == CapeStyle.Effect.DRIPS || e == CapeStyle.Effect.SAND || e == CapeStyle.Effect.SMOKE
+			|| e == CapeStyle.Effect.FLAMES || e == CapeStyle.Effect.VENOM;
 	}
 
 	/** True for effects that fall from the upper half (snow, leaves). */
@@ -346,10 +361,99 @@ final class CapeParticles
 				}
 				p.color2 = 0x8A6418;
 				break;
+			case VENOM:
+				if (rng.nextFloat() < 0.55f)
+				{
+					// venom drips
+					p.vx = jit(2);
+					p.vy = jit(2);
+					p.vh = 8;
+					p.ah = 240;
+					p.life = 0.55f + rng.nextFloat() * 0.25f;
+					p.size = 4;
+					p.kind = Kind.STREAK;
+				}
+				else
+				{
+					// toxic specks drifting up
+					p.vx = nx * 8 + jit(5);
+					p.vy = ny * 8 + jit(5);
+					p.vh = -18 - rng.nextFloat() * 10;
+					p.life = 1.1f + rng.nextFloat() * 0.5f;
+					p.size = 4;
+				}
+				p.color = styleColor(style, rng.nextFloat() < 0.5f ? 0.65f : 1f);
+				p.color2 = styleColor(style, 0.3f);
+				break;
+			case MIST:
+				p.vx = nx * 9 + jit(5);
+				p.vy = ny * 9 + jit(5);
+				p.vh = -6 - rng.nextFloat() * 8;
+				p.life = 1.3f + rng.nextFloat() * 0.7f;
+				p.size = 6;
+				p.color = styleColor(style, rng.nextFloat() < 0.5f ? 0.6f : 0.45f);
+				p.color2 = styleColor(style, 0.15f);
+				p.alpha = 0.5f;
+				p.kind = Kind.PUFF;
+				break;
+			case DROPLETS:
+				p.vx = nx * 12 + jit(6);
+				p.vy = ny * 12 + jit(6);
+				p.vh = -25 + jit(10);
+				p.ah = 220;
+				p.life = 0.6f + rng.nextFloat() * 0.3f;
+				p.size = 3 + rng.nextFloat() * 2;
+				p.color = rng.nextFloat() < 0.5f ? styleColor(style, 1f) : 0xFFFFFF;
+				p.color2 = styleColor(style, 0.65f);
+				break;
+			case FLAMES:
+				p.vx = nx * 10 + jit(6);
+				p.vy = ny * 10 + jit(6);
+				p.vh = -50 - rng.nextFloat() * 25;
+				p.life = 0.35f + rng.nextFloat() * 0.25f;
+				p.size = 5;
+				p.color = styleColor(style, rng.nextFloat() < 0.5f ? 0.7f : 1f);
+				p.color2 = styleColor(style, 0.3f);
+				p.kind = rng.nextFloat() < 0.6f ? Kind.STREAK : Kind.DOT;
+				break;
+			case STYLED_MOTES:
+				p.vx = nx * 6 + jit(5);
+				p.vy = ny * 6 + jit(5);
+				p.vh = -20 - rng.nextFloat() * 16;
+				p.life = 1.6f + rng.nextFloat() * 0.8f;
+				p.size = 5;
+				p.color = rng.nextFloat() < 0.5f ? styleColor(style, 1f) : 0xFFFFFF;
+				p.color2 = styleColor(style, 0.65f);
+				p.kind = rng.nextFloat() < 0.25f ? Kind.GLINT : Kind.DOT;
+				break;
+			case STYLED_EMBERS:
+				p.vx = nx * 14 + jit(10);
+				p.vy = ny * 14 + jit(10);
+				p.vh = -45 - rng.nextFloat() * 40;
+				p.life = 0.9f + rng.nextFloat() * 0.7f;
+				p.size = 5 + rng.nextFloat() * 2;
+				p.color = styleColor(style, rng.nextFloat() < 0.6f ? 0.7f : 1f);
+				p.color2 = styleColor(style, 0.3f);
+				break;
+			case STYLED_GLINTS:
+				p.x = px + nx;
+				p.y = py + ny;
+				p.h = ph + nh;
+				p.life = 0.35f + rng.nextFloat() * 0.3f;
+				p.size = 8;
+				p.color = rng.nextFloat() < 0.5f ? styleColor(style, 1f) : 0xFFFFFF;
+				p.color2 = p.color;
+				p.kind = Kind.GLINT;
+				break;
 			default:
 				return;
 		}
 		particles.add(p);
+	}
+
+	private static int styleColor(CapeStyle style, float heat)
+	{
+		return style.isOriginal() ? 0xFF8A1C : CapeTextures.sample(style, heat);
 	}
 
 	void update(float dt)

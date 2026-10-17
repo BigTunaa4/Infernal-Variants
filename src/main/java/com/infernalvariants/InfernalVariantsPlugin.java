@@ -78,6 +78,7 @@ public class InfernalVariantsPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
+		applyCustom();
 		overlayManager.add(overlay);
 		clientThread.invoke(() ->
 		{
@@ -115,6 +116,10 @@ public class InfernalVariantsPlugin extends Plugin
 			return;
 		}
 		// styles are re-applied on the next client tick; clear particles so a style switch is instant
+		if (e.getKey() != null && e.getKey().startsWith("custom"))
+		{
+			applyCustom();
+		}
 		overlay.reset();
 	}
 
@@ -247,7 +252,8 @@ public class InfernalVariantsPlugin extends Plugin
 				String name = p.getName();
 				CapeStyle[] all = CapeStyle.values();
 				int h = name == null ? 0 : (name.hashCode() & 0x7FFFFFFF);
-				return all[1 + h % (all.length - 1)];
+				// any designed style; never the original or the custom one
+				return all[1 + h % (all.length - 2)];
 			}
 			default:
 				return null;
@@ -274,6 +280,32 @@ public class InfernalVariantsPlugin extends Plugin
 	{
 		PlayerComposition pc = p.getPlayerComposition();
 		return pc != null && pc.getEquipmentId(KitType.CAPE) == MAX_CAPE_ID;
+	}
+
+	/** Copy the custom colours from the config into the Custom style and drop its cached art. */
+	private void applyCustom()
+	{
+		CapeStyle c = CapeStyle.CUSTOM;
+		int plate = config.customPlate().getRGB() & 0xFFFFFF;
+		int vein = config.customVein().getRGB() & 0xFFFFFF;
+		int core = config.customCore().getRGB() & 0xFFFFFF;
+		c.stopRgb[0] = plate;
+		c.stopRgb[1] = CapeTextures.lerp(plate, vein, 0.35f);
+		c.stopRgb[2] = vein;
+		c.stopRgb[3] = core;
+
+		float[] p = java.awt.Color.RGBtoHSB((plate >> 16) & 255, (plate >> 8) & 255, plate & 255, null);
+		c.rockHue = Math.round(p[0] * 64) & 63;
+		c.rockSat = Math.round(p[1] * 4);
+		c.rockLightShift = Math.round(p[2] * 40);
+		float[] v = java.awt.Color.RGBtoHSB((vein >> 16) & 255, (vein >> 8) & 255, vein & 255, null);
+		c.glowHue = Math.round(v[0] * 64) & 63;
+		c.glowSat = Math.round(v[1] * 7);
+		c.effect = config.customEffect();
+
+		veinTextures.remove(c);
+		hemTextures.remove(c);
+		emblemSprites.remove(c);
 	}
 
 	private void loadHeat()
@@ -310,7 +342,7 @@ public class InfernalVariantsPlugin extends Plugin
 
 	BufferedImage hemTexture(CapeStyle style)
 	{
-		if (heat == null || style.special != CapeStyle.Special.DRAGON)
+		if (heat == null || !CapeTextures.hasHem(style))
 		{
 			return null;
 		}

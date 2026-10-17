@@ -117,6 +117,16 @@ final class CapeTextures
 							c = lerp(c, 0x6A5220, band * band * 0.35f);
 						}
 						break;
+					case SHARDS:
+					{
+						// corrupted: faceted crystal shards catch the light across the plates
+						if (h < 0.35f)
+						{
+							float f = (float) Math.abs(Math.sin(u * 23.0 + v * 7.0) * Math.cos(v * 19.0 - u * 5.0));
+							c = lerp(c, 0x6A2430, f > 0.82f ? 0.6f : f * 0.18f);
+						}
+						break;
+					}
 					default:
 						break;
 				}
@@ -127,17 +137,25 @@ final class CapeTextures
 	}
 
 	/**
-	 * A second texture faded in toward the hem (only Dragonfire uses it: the veins burn blue
-	 * at the bottom, like the reference art).
+	 * A second texture faded in toward the hem (Dragonfire burns blue, Varlamore Sunset fades to dusk).
 	 */
+	static boolean hasHem(CapeStyle style)
+	{
+		return style.special == CapeStyle.Special.DRAGON || style.special == CapeStyle.Special.SUNSET;
+	}
+
 	static BufferedImage hemTexture(CapeStyle style, float[] heat)
 	{
-		if (style.special != CapeStyle.Special.DRAGON)
+		if (!hasHem(style))
 		{
 			return null;
 		}
 		float[] p = {0f, .3f, .6f, 1f};
-		int[] c = {0x160907, 0x161A5A, 0x3264FA, 0xBEE1FF};
+		int[] c = style.special == CapeStyle.Special.DRAGON
+			// dragonfire: the veins burn blue at the bottom
+			? new int[]{0x160907, 0x161A5A, 0x3264FA, 0xBEE1FF}
+			// varlamore sunset: warm orange fades into dusk purple toward the hem
+			: new int[]{0x120A1A, 0x3A1450, 0xA03CC8, 0xF0B4FF};
 		BufferedImage img = new BufferedImage(SIZE, SIZE, BufferedImage.TYPE_INT_RGB);
 		for (int i = 0; i < SIZE * SIZE; i++)
 		{
@@ -277,6 +295,91 @@ final class CapeTextures
 				g.setStroke(new BasicStroke(2));
 				Polygon vein = rotate(new Polygon(new int[]{16, 16}, new int[]{5, 28}, 2), 16, 16, (variant - 1.5) * 0.7);
 				g.drawLine(vein.xpoints[0], vein.ypoints[0], vein.xpoints[1], vein.ypoints[1]);
+				break;
+			}
+			case SUN:
+			{
+				// Amascut's sun disc with short rays
+				g.setColor(new Color(0x5A3C10));
+				g.fillOval(7, 7, 18, 18);
+				for (int i = 0; i < 8; i++)
+				{
+					double a = Math.PI * i / 4;
+					int x1 = (int) Math.round(16 + Math.cos(a) * 10), y1 = (int) Math.round(16 + Math.sin(a) * 10);
+					int x2 = (int) Math.round(16 + Math.cos(a) * 15), y2 = (int) Math.round(16 + Math.sin(a) * 15);
+					g.setStroke(new BasicStroke(3));
+					g.setColor(new Color(0x5A3C10));
+					g.drawLine(x1, y1, x2, y2);
+					g.setStroke(new BasicStroke(1.6f));
+					g.setColor(new Color(mid));
+					g.drawLine(x1, y1, x2, y2);
+				}
+				g.setColor(new Color(mid));
+				g.fillOval(9, 9, 14, 14);
+				g.setColor(new Color(core));
+				g.fillOval(12, 12, 8, 8);
+				break;
+			}
+			case SARADOMIN:
+			{
+				// Saradomin's star: four long points over four short ones, gold on blue
+				Polygon big = star(16, 16, 15, 3, 4);
+				Polygon small = rotate(star(16, 16, 9, 3, 4), 16, 16, Math.PI / 4);
+				g.setColor(new Color(0x0A1228));
+				g.fill(grow(grow(big)));
+				g.setColor(new Color(mid));
+				g.fill(big);
+				g.setColor(new Color(0x2A4C8C));
+				g.fill(small);
+				g.setColor(new Color(core));
+				g.fillRect(14, 14, 4, 4);
+				break;
+			}
+			case ZAMORAK:
+			{
+				// Zamorak's mark: a downward chevron with horns
+				Polygon v = new Polygon(new int[]{3, 10, 16, 22, 29, 16}, new int[]{3, 3, 17, 3, 3, 29}, 6);
+				g.setColor(new Color(0x1A0404));
+				g.fill(grow(v));
+				g.setColor(new Color(mid));
+				g.fill(v);
+				g.setColor(new Color(0x1A0404));
+				g.fillPolygon(new int[]{11, 16, 21}, new int[]{8, 19, 8}, 3);
+				g.setColor(new Color(core));
+				g.fillRect(15, 22, 2, 3);
+				break;
+			}
+			case GUTHIX:
+			{
+				// Guthix's balance: a ring split in three
+				g.setStroke(new BasicStroke(4));
+				g.setColor(new Color(0x1E2A12));
+				g.drawOval(4, 4, 24, 24);
+				g.setStroke(new BasicStroke(2.4f));
+				g.setColor(new Color(mid));
+				g.drawOval(4, 4, 24, 24);
+				for (int i = 0; i < 3; i++)
+				{
+					double a = -Math.PI / 2 + i * 2 * Math.PI / 3;
+					g.drawLine(16, 16, (int) Math.round(16 + Math.cos(a) * 12), (int) Math.round(16 + Math.sin(a) * 12));
+				}
+				g.setColor(new Color(core));
+				g.fillOval(13, 13, 6, 6);
+				break;
+			}
+			case TWISTED:
+			{
+				// a twisted bow silhouette
+				g.setStroke(new BasicStroke(3));
+				g.setColor(new Color(0x08140C));
+				g.drawArc(4, 2, 20, 28, 270, 180);
+				g.setStroke(new BasicStroke(2));
+				g.setColor(new Color(mid));
+				g.drawArc(4, 2, 20, 28, 270, 180);
+				g.setColor(new Color(core));
+				g.drawLine(14, 3, 14, 29);
+				g.setColor(new Color(dark));
+				g.fillRect(20, 14, 4, 4);
 				break;
 			}
 			default:

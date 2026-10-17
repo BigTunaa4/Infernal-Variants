@@ -55,6 +55,11 @@ class CapeOverlay extends Overlay
 		{"C2", "C1", "C3"},              // VOID
 		{"CS"},                          // HOOD
 		{"LS", "RS", "LL", "RL"},        // LEAVES
+		{"CS"},                          // SUN
+		{"CS", "CL"},                    // SARADOMIN
+		{"CS"},                          // ZAMORAK
+		{"CS"},                          // GUTHIX
+		{"CS"},                          // TWISTED
 	};
 	/** Emblem size in model units, per slot. */
 	private static final float[][] EMBLEM_SIZES = {
@@ -64,6 +69,11 @@ class CapeOverlay extends Overlay
 		{22, 9, 9},
 		{20},
 		{10, 10, 10, 10},
+		{22},
+		{27, 11},
+		{20},
+		{21},
+		{27},
 	};
 	/** Which sprite variant each slot uses. */
 	private static final int[][] EMBLEM_SPRITE = {
@@ -73,6 +83,11 @@ class CapeOverlay extends Overlay
 		{0, 1, 1},
 		{0},
 		{0, 1, 2, 3},
+		{0},
+		{0, 0},
+		{0},
+		{0},
+		{0},
 	};
 
 	private final Client client;
