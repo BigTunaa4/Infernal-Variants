@@ -232,6 +232,7 @@ final class CapeTextures
 
 	private static BufferedImage paint(CapeStyle style, Analysis an, float[] pos, int[] rgb, StyleLook look, boolean hem)
 	{
+		CapePattern pattern = style.pattern();
 		BufferedImage img = new BufferedImage(SIZE, SIZE, BufferedImage.TYPE_INT_RGB);
 		Random rng = new Random(0x1F3AL + style.ordinal() + (hem ? 99 : 0));
 		// the rock's own tint: neutral grey pulled toward the style's stone colour
@@ -246,22 +247,13 @@ final class CapeTextures
 				float n = rng.nextFloat();
 				float u = x / 127f, v = y / 127f;
 
-				// stone plates: each one its own shade, domed toward the middle, with a lit rocky surface
+				// the surface between the glowing lines: rock, cloth, metal, crystal...
 				float plateness = 1f - clamp((h - 0.12f) / 0.3f);
 				if (plateness > 0)
 				{
 					float pr = an.plate[i] >= 0 ? an.plateRand[an.plate[i]] : 0.5f;
-					float dome = 0.86f + 0.26f * an.centre[i];
-					c = scale(c, 1f + (dome - 1f) * plateness);
-					// light the rock from the upper right using the slope of a soft noise field
-					float bump = stone(x + 1, y - 1) - stone(x - 1, y + 1);
-					float amount = (0.05f * (stone(x, y) - 0.5f) * 2f
-						+ 1.1f * bump
-						+ look.plateVariation * (pr - 0.5f) * 0.22f
-						+ 0.03f * an.centre[i]
-						+ 0.02f * (n - 0.5f)) * plateness;
-					c = addTinted(c, plateTint, amount);
-					// glow from the veins spilling onto the stone
+					c = surface(pattern.surface, c, x, y, u, v, n, pr, an.centre[i], plateness, plateTint, look);
+					// glow from the lines spilling onto the surface
 					float spill = an.glow[i] * plateness * look.haloStrength;
 					c = screen(c, look.halo, spill * 0.85f);
 				}
@@ -275,8 +267,60 @@ final class CapeTextures
 				img.setRGB(x, y, c);
 			}
 		}
-		decorate(style.special, img, an, rgb);
 		return img;
+	}
+
+	/** Shade one texel of the background surface for a pattern's material. */
+	private static int surface(CapePattern.Surface type, int c, int x, int y, float u, float v, float n, float pr,
+		float centre, float plateness, int tint, StyleLook look)
+	{
+		switch (type)
+		{
+			case ROCK:
+			{
+				float dome = 0.86f + 0.26f * centre;
+				c = scale(c, 1f + (dome - 1f) * plateness);
+				// lit from the upper right using the slope of a soft noise field
+				float bump = stone(x + 1, y - 1) - stone(x - 1, y + 1);
+				float amount = (0.05f * (stone(x, y) - 0.5f) * 2f + 1.1f * bump
+					+ look.plateVariation * (pr - 0.5f) * 0.22f + 0.03f * centre + 0.02f * (n - 0.5f)) * plateness;
+				return addTinted(c, tint, amount);
+			}
+			case CLOTH:
+			{
+				// a fine over-under weave
+				boolean over = (((x >> 1) + (y >> 1)) & 1) == 0;
+				float weave = (over ? 0.035f : -0.035f) + ((x & 1) == 0 ? 0.012f : -0.012f);
+				float drape = (stone(x / 2, y) - 0.5f) * 0.08f;
+				return addTinted(c, tint, (weave + drape + 0.015f * (n - 0.5f)) * plateness);
+			}
+			case METAL:
+			{
+				// polished: strongly domed with a bright highlight high on each piece
+				float dome = 0.62f + 0.55f * centre;
+				c = scale(c, 1f + (dome - 1f) * plateness);
+				float hl = (float) Math.pow(centre, 6) * 0.5f;
+				return screen(c, lerp(tint, 0xFFFFFF, 0.5f), hl * plateness);
+			}
+			case FACET:
+			{
+				// flat crystal faces, each its own tone, with a gentle gradient across it
+				double ang = pr * Math.PI * 2;
+				float grad = (float) ((u - 0.5) * Math.cos(ang) + (v - 0.5) * Math.sin(ang)) * 0.9f;
+				float amount = ((pr - 0.5f) * 0.3f + grad * 0.25f) * plateness;
+				return addTinted(c, tint, amount);
+			}
+			case SOFT:
+			{
+				float mottle = (stone(x, y) - 0.5f) * 0.14f + (pr - 0.5f) * look.plateVariation * 0.12f;
+				float dome = 0.93f + 0.1f * centre;
+				c = scale(c, 1f + (dome - 1f) * plateness);
+				return addTinted(c, tint, mottle * plateness);
+			}
+			case SPACE:
+			default:
+				return addTinted(c, tint, (n - 0.5f) * 0.03f * plateness);
+		}
 	}
 
 	/** Per-texel style touches. */
@@ -291,8 +335,8 @@ final class CapeTextures
 			case PRISM:
 			{
 				// crystal: veins shimmer through a soft rainbow, the stone has bright facets
-				float k = clamp((h - 0.38f) / 0.42f) * 0.72f;
-				int rainbow = Color.HSBtoRGB((u * 0.8f + v * 0.6f) % 1f, 0.5f, 1f) & 0xFFFFFF;
+				float k = clamp((h - 0.38f) / 0.42f) * 0.4f;
+				int rainbow = Color.HSBtoRGB((u * 0.8f + v * 0.6f) % 1f, 0.35f, 1f) & 0xFFFFFF;
 				c = lerp(c, rainbow, k);
 				float facet = (float) Math.abs(Math.sin(u * 31 + v * 13) * Math.sin(v * 27 - u * 9));
 				if (h < 0.2f)
@@ -336,134 +380,16 @@ final class CapeTextures
 					c = screen(c, 0xC8A050, streak * 0.55f * an.centre[y * SIZE + x]);
 				}
 				return c;
-			case SHARDS:
-			{
-				// corrupted: each plate is a crystal shard, split by a bright diagonal facet edge
-				if (h < 0.25f)
-				{
-					int pid = an.plate[y * SIZE + x];
-					float pr = pid >= 0 ? an.plateRand[pid] : 0.5f;
-					double ang = pr * Math.PI;
-					double d = (u - 0.5) * Math.cos(ang) + (v - 0.5) * Math.sin(ang);
-					double edge = Math.abs(((d * 9 + pr * 3) % 1 + 1) % 1 - 0.5);
-					boolean light = ((int) Math.floor(d * 9 + pr * 3) & 1) == 0;
-					c = light ? screen(c, 0x7A1C2A, 0.35f) : scale(c, 0.85f);
-					if (edge > 0.47)
-					{
-						c = screen(c, 0xFF8090, 0.45f * an.centre[y * SIZE + x]);
-					}
-				}
-				return c;
-			}
-			case CAUSTIC:
-			{
-				// tidal: rippling light lines like sunlight through water (abyssal: drifting tendrils)
-				if (h < 0.3f)
-				{
-					double w = Math.sin(u * 20 + Math.sin(v * 13) * 2.2) + Math.sin(v * 17 + Math.sin(u * 11) * 2.0);
-					float line = (float) Math.max(0, 1 - Math.abs(w) * 3.2);
-					c = screen(c, look.halo, line * 0.6f);
-				}
-				return c;
-			}
 			case STARS:
-				// void: a faint starfield inside the dark plates (tormented: drifting demon sparks)
+				// tormented: drifting demon sparks in the dark stone
 				if (h < 0.15f && n > 0.975f)
 				{
 					return lerp(c, n > 0.993f ? lerp(rgb[rgb.length - 1], 0xFFFFFF, 0.5f) : rgb[rgb.length - 2], 0.75f);
 				}
 				return c;
-			case BUBBLES:
-			case BOLTS:
-			case ETCH:
 			default:
 				return c;
 		}
-	}
-
-	/** Larger hand-placed details drawn over the finished texture. */
-	private static void decorate(CapeStyle.Special sp, BufferedImage img, Analysis an, int[] rgb)
-	{
-		if (sp != CapeStyle.Special.BUBBLES && sp != CapeStyle.Special.BOLTS && sp != CapeStyle.Special.ETCH)
-		{
-			return;
-		}
-		Graphics2D g = img.createGraphics();
-		g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
-		Random r = new Random(1234 + sp.ordinal());
-		int vein = rgb[rgb.length - 2];
-		int core = rgb[rgb.length - 1];
-		for (int k = 0; k < 400; k++)
-		{
-			int x = r.nextInt(SIZE), y = r.nextInt(SIZE);
-			int i = y * SIZE + x;
-			// only on the middle of a plate
-			if (an.heat[i] > 0.1f || an.centre[i] < 0.55f)
-			{
-				continue;
-			}
-			switch (sp)
-			{
-				case BUBBLES:
-				{
-					// toxic: little venom bubbles in the stone
-					int s = 2 + r.nextInt(3);
-					g.setColor(new Color(lerp(vein, 0x000000, 0.35f)));
-					g.drawOval(x, y, s, s);
-					g.setColor(new Color(core));
-					g.fillRect(x + 1, y + 1, 1, 1);
-					k += 25;
-					break;
-				}
-				case BOLTS:
-				{
-					// lightning: a faint forked crackle of charge across the stone
-					g.setColor(new Color(lerp(vein, 0x000000, 0.55f)));
-					int lx = x, ly = y;
-					for (int s = 0; s < 3; s++)
-					{
-						int nx = lx + (r.nextBoolean() ? 2 : -2), ny = ly + 2;
-						g.drawLine(lx, ly, nx, ny);
-						if (s == 1)
-						{
-							g.drawLine(nx, ny, nx + (nx > lx ? 2 : -2), ny + 1);
-						}
-						lx = nx;
-						ly = ny;
-					}
-					k += 45;
-					break;
-				}
-				case ETCH:
-				{
-					// rune: faint carved rune marks
-					g.setColor(new Color(lerp(vein, 0x000000, 0.45f)));
-					int t = r.nextInt(3);
-					if (t == 0)
-					{
-						g.drawLine(x, y - 2, x + 2, y);
-						g.drawLine(x + 2, y, x, y + 2);
-						g.drawLine(x, y + 2, x - 2, y);
-						g.drawLine(x - 2, y, x, y - 2);
-					}
-					else if (t == 1)
-					{
-						g.drawLine(x, y - 3, x, y + 3);
-						g.drawLine(x, y - 1, x + 2, y - 3);
-					}
-					else
-					{
-						g.drawLine(x - 2, y - 2, x + 2, y + 2);
-						g.drawLine(x - 2, y + 2, x + 2, y - 2);
-					}
-					k += 30;
-					break;
-				}
-				default:
-					break;
-			}
-		}
-		g.dispose();
 	}
 
 	static int sampleStops(float[] pos, int[] rgb, float h)

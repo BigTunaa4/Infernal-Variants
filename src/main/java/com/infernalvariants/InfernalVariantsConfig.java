@@ -119,6 +119,18 @@ public interface InfernalVariantsConfig extends Config
 		return new Color(0xE6F6FF);
 	}
 
+	@ConfigItem(
+		keyName = "customPattern",
+		name = "Pattern",
+		description = "The design painted on the custom cape",
+		position = 34,
+		section = customSection
+	)
+	default CapePattern customPattern()
+	{
+		return CapePattern.CRACKS;
+	}
+
 	enum OthersMode
 	{
 		OFF("Off"),

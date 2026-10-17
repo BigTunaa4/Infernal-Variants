@@ -61,7 +61,10 @@ public class InfernalVariantsPlugin extends Plugin
 	@Inject
 	private InfernalVariantsConfig config;
 
+	/** The game's own crack pattern as a heat map; every other pattern is generated. */
+	private float[] crackHeat;
 	private CapeTextures.Analysis analysis;
+	private final Map<CapePattern, CapeTextures.Analysis> analyses = new EnumMap<>(CapePattern.class);
 	private final Map<CapeStyle, BufferedImage> veinTextures = new EnumMap<>(CapeStyle.class);
 	private final Map<CapeStyle, BufferedImage> hemTextures = new EnumMap<>(CapeStyle.class);
 	private final Map<CapeStyle, BufferedImage> glowTextures = new EnumMap<>(CapeStyle.class);
@@ -108,6 +111,8 @@ public class InfernalVariantsPlugin extends Plugin
 		hemTextures.clear();
 		emblemSprites.clear();
 		analysis = null;
+		crackHeat = null;
+		analyses.clear();
 		glowTextures.clear();
 	}
 
@@ -118,7 +123,7 @@ public class InfernalVariantsPlugin extends Plugin
 		{
 			return;
 		}
-		// styles are re-applied on the next client tick; clear particles so a style switch is instant
+		// colours are re-applied on the next client tick
 		if (e.getKey() != null && e.getKey().startsWith("custom"))
 		{
 			applyCustom();
@@ -296,6 +301,7 @@ public class InfernalVariantsPlugin extends Plugin
 		c.stopRgb[1] = CapeTextures.lerp(plate, vein, 0.35f);
 		c.stopRgb[2] = vein;
 		c.stopRgb[3] = core;
+		CapeStyle.customPattern = config.customPattern();
 
 		float[] p = java.awt.Color.RGBtoHSB((plate >> 16) & 255, (plate >> 8) & 255, plate & 255, null);
 		c.rockHue = Math.round(p[0] * 64) & 63;
@@ -325,11 +331,18 @@ public class InfernalVariantsPlugin extends Plugin
 		{
 			return;
 		}
-		analysis = new CapeTextures.Analysis(CapeTextures.heatMap(pixels, tp.getBrightness()));
+		crackHeat = CapeTextures.heatMap(pixels, tp.getBrightness());
+		analyses.clear();
+		analysis = analysisFor(CapePattern.CRACKS);
 		glowTextures.clear();
 		veinTextures.clear();
 		hemTextures.clear();
 		emblemSprites.clear();
+	}
+
+	private CapeTextures.Analysis analysisFor(CapePattern pattern)
+	{
+		return analyses.computeIfAbsent(pattern, pt -> new CapeTextures.Analysis(pt.heat(crackHeat)));
 	}
 
 	boolean texturesReady()
@@ -343,7 +356,7 @@ public class InfernalVariantsPlugin extends Plugin
 		{
 			return null;
 		}
-		return veinTextures.computeIfAbsent(style, s -> CapeTextures.veinTexture(s, analysis));
+		return veinTextures.computeIfAbsent(style, s -> CapeTextures.veinTexture(s, analysisFor(s.pattern())));
 	}
 
 	BufferedImage hemTexture(CapeStyle style)
@@ -352,7 +365,7 @@ public class InfernalVariantsPlugin extends Plugin
 		{
 			return null;
 		}
-		return hemTextures.computeIfAbsent(style, s -> CapeTextures.hemTexture(s, analysis));
+		return hemTextures.computeIfAbsent(style, s -> CapeTextures.hemTexture(s, analysisFor(s.pattern())));
 	}
 
 	BufferedImage glowTexture(CapeStyle style)
@@ -361,7 +374,7 @@ public class InfernalVariantsPlugin extends Plugin
 		{
 			return null;
 		}
-		return glowTextures.computeIfAbsent(style, s -> CapeTextures.glowTexture(s, analysis));
+		return glowTextures.computeIfAbsent(style, s -> CapeTextures.glowTexture(s, analysisFor(s.pattern())));
 	}
 
 	private final Map<CapeStyle, BufferedImage> emblemGlows = new EnumMap<>(CapeStyle.class);

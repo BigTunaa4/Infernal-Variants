@@ -34,11 +34,11 @@ public enum CapeStyle
 
 	LIGHTNING("Lightning",
 		grad(0f, 0x121316, .3f, 0x4A420E, .6f, 0xF0D020, .85f, 0xFFF29A, 1f, 0xFFFFFF),
-		9, 1, 0, 10, 7, Special.BOLTS, Emblem.NONE),
+		9, 1, 0, 10, 7, Special.NONE, Emblem.NONE),
 
 	RUNE("Rune",
 		grad(0f, 0x0C161C, .3f, 0x0E3A48, .6f, 0x1A96B4, 1f, 0x96F4FF),
-		32, 2, 0, 32, 6, Special.ETCH, Emblem.RUNES),
+		32, 2, 0, 32, 6, Special.NONE, Emblem.RUNES),
 
 	DRAGONFIRE("Dragonfire",
 		grad(0f, 0x160907, .3f, 0x601008, .6f, 0xDE3410, 1f, 0xFFB446),
@@ -46,7 +46,7 @@ public enum CapeStyle
 
 	VOID("Void",
 		grad(0f, 0x0C0912, .35f, 0x24103A, .65f, 0x602C96, 1f, 0xBA6EF0),
-		49, 2, 0, 49, 5, Special.STARS, Emblem.VOID),
+		49, 2, 0, 49, 5, Special.NONE, Emblem.VOID),
 
 	SANDSTONE("Sandstone",
 		grad(0f, 0x967A52, .3f, 0x806440, .6f, 0x564028, 1f, 0x3E2C1C),
@@ -66,11 +66,11 @@ public enum CapeStyle
 
 	TOXIC("Toxic",
 		grad(0f, 0x0C1614, .3f, 0x0E3A2C, .6f, 0x3CC23A, 1f, 0xC8FF6A),
-		26, 2, 0, 20, 6, Special.BUBBLES, Emblem.NONE),
+		26, 2, 0, 20, 6, Special.NONE, Emblem.NONE),
 
 	CORRUPTED("Corrupted",
 		grad(0f, 0x1A0A0E, .3f, 0x52121C, .6f, 0xD8303C, 1f, 0xFFB0B4),
-		62, 2, 4, 0, 6, Special.SHARDS, Emblem.NONE),
+		62, 2, 4, 0, 6, Special.NONE, Emblem.NONE),
 
 	SANGUINE("Sanguine",
 		grad(0f, 0x1A0606, .3f, 0x500A0C, .6f, 0xC89A2E, 1f, 0xFFE6A0),
@@ -82,7 +82,7 @@ public enum CapeStyle
 
 	TIDAL("Tidal",
 		grad(0f, 0x081624, .3f, 0x0C3450, .6f, 0x2AB49C, 1f, 0xC8FFF0),
-		38, 3, 2, 30, 6, Special.CAUSTIC, Emblem.NONE),
+		38, 3, 2, 30, 6, Special.NONE, Emblem.NONE),
 
 	SARADOMIN("Saradomin",
 		grad(0f, 0x16244A, .3f, 0x22407C, .6f, 0xE2B442, 1f, 0xFFF4C0),
@@ -94,11 +94,11 @@ public enum CapeStyle
 
 	GUTHIX("Guthix",
 		grad(0f, 0x2A2416, .3f, 0x3C3A1E, .6f, 0x5EA040, 1f, 0xD8F09A),
-		10, 3, 6, 18, 5, Special.MOSS, Emblem.GUTHIX),
+		10, 3, 6, 18, 5, Special.NONE, Emblem.GUTHIX),
 
 	ABYSSAL("Abyssal",
 		grad(0f, 0x140A0E, .3f, 0x3C0E1E, .6f, 0x8E1E48, 1f, 0xF07AA0),
-		58, 2, 0, 60, 6, Special.CAUSTIC, Emblem.NONE),
+		58, 2, 0, 60, 6, Special.NONE, Emblem.NONE),
 
 	TORMENTED("Tormented",
 		grad(0f, 0x0C0E0A, .3f, 0x1E2A0E, .6f, 0x5AC81E, 1f, 0xDCFF8A),
@@ -110,7 +110,7 @@ public enum CapeStyle
 
 	TWISTED("Twisted",
 		grad(0f, 0x0A100C, .3f, 0x14301E, .6f, 0x2E8A54, 1f, 0xA8F0C0),
-		22, 2, 0, 24, 5, Special.MOSS, Emblem.TWISTED),
+		22, 2, 0, 24, 5, Special.NONE, Emblem.TWISTED),
 
 	CUSTOM("Custom (pick colours)",
 		grad(0f, 0x101010, .3f, 0x303030, .6f, 0x808080, 1f, 0xFFFFFF),
@@ -118,7 +118,7 @@ public enum CapeStyle
 
 	enum Special
 	{
-		NONE, DRAGON, GRAIN, PRISM, FROST, MOSS, SHEEN, SUNSET, SHARDS, CAUSTIC, STARS, BUBBLES, BOLTS, ETCH
+		NONE, DRAGON, GRAIN, PRISM, FROST, MOSS, SHEEN, SUNSET, STARS
 	}
 
 	enum Emblem
@@ -160,12 +160,72 @@ public enum CapeStyle
 		this.emblem = emblem;
 	}
 
+	/** Pattern chosen for the Custom style (set from the plugin config). */
+	static CapePattern customPattern = CapePattern.CRACKS;
+
+	/** The design painted on the panel for this style. */
+	CapePattern pattern()
+	{
+		switch (this)
+		{
+			case HOLY:
+				return CapePattern.LATTICE;
+			case SHADOW:
+				return CapePattern.SMOKE;
+			case ICE:
+				return CapePattern.SHARDS;
+			case BLOOD:
+				return CapePattern.DRIPS;
+			case NATURE:
+				return CapePattern.VINES;
+			case LIGHTNING:
+				return CapePattern.BOLTS;
+			case RUNE:
+				return CapePattern.RUNIC;
+			case VOID:
+				return CapePattern.NEBULA;
+			case SANDSTONE:
+				return CapePattern.STRATA;
+			case CRYSTAL:
+				return CapePattern.FACETS;
+			case ROGUELIKE:
+				return CapePattern.QUILT;
+			case GOLDEN:
+				return CapePattern.SCALES;
+			case TOXIC:
+				return CapePattern.BUBBLES;
+			case CORRUPTED:
+				return CapePattern.SPLINTERS;
+			case SANGUINE:
+				return CapePattern.VESSELS;
+			case AMASCUT:
+				return CapePattern.GLYPHS;
+			case TIDAL:
+				return CapePattern.WAVES;
+			case SARADOMIN:
+				return CapePattern.HERALDIC;
+			case GUTHIX:
+				return CapePattern.GRAIN;
+			case ABYSSAL:
+				return CapePattern.TENDRILS;
+			case VARLAMORE:
+				return CapePattern.FEATHERS;
+			case TWISTED:
+				return CapePattern.BRAID;
+			case CUSTOM:
+				return customPattern;
+			default:
+				// Infernal, Dragonfire, Zamorak, Tormented keep the lava cracks
+				return CapePattern.CRACKS;
+		}
+	}
+
 	boolean isOriginal()
 	{
 		return stopPos == null;
 	}
 
-	/** Colour picked from the vein gradient, used to tint particles and emblems. */
+	/** Colour picked from the vein gradient, used to tint emblems. */
 	int veinColor(float heat)
 	{
 		if (stopPos == null)

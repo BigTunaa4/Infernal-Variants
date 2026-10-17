@@ -393,7 +393,7 @@ class CapeOverlay extends Overlay
 		float edge = (float) (Math.hypot(sx[pf.a] - sx[pf.b], sy[pf.a] - sy[pf.b])
 			+ Math.hypot(sx[pf.b] - sx[pf.c], sy[pf.b] - sy[pf.c])
 			+ Math.hypot(sx[pf.c] - sx[pf.a], sy[pf.c] - sy[pf.a])) / 3f;
-		float grow = 1f + 1.2f / Math.max(edge, 1f);
+		float grow = 1f + 2f / Math.max(edge, 1f);
 		Path2D.Float path = new Path2D.Float();
 		for (int i = 0; i < 3; i++)
 		{
