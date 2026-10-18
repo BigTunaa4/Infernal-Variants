@@ -24,36 +24,21 @@ import java.util.Random;
 public enum CapePattern
 {
 	CRACKS("Lava cracks", Surface.ROCK),
-	LATTICE("Holy lattice", Surface.CLOTH),
 	SMOKE("Smoke wisps", Surface.SOFT),
 	SHARDS("Ice shards", Surface.FACET),
-	DRIPS("Drips", Surface.SOFT),
-	VINES("Vines", Surface.SOFT),
-	BOLTS("Lightning", Surface.SOFT),
-	RUNIC("Rune stones", Surface.ROCK),
-	NEBULA("Nebula", Surface.SPACE),
-	STRATA("Strata", Surface.ROCK),
-	FACETS("Crystal facets", Surface.FACET),
-	QUILT("Quilted leather", Surface.CLOTH),
-	SCALES("Scale mail", Surface.METAL),
-	BUBBLES("Bubbles", Surface.SOFT),
 	SPLINTERS("Splinters", Surface.FACET),
 	VESSELS("Vessels", Surface.SOFT),
 	GLYPHS("Glyph bands", Surface.ROCK),
-	WAVES("Waves", Surface.SOFT),
-	HERALDIC("Heraldic", Surface.CLOTH),
 	GRAIN("Wood grain", Surface.SOFT),
-	TENDRILS("Tendrils", Surface.SOFT),
 	FEATHERS("Feathers", Surface.SOFT),
-	BRAID("Braid", Surface.SOFT),
-	// --- the concept-art family: dark downward scales with glowing chevron seams ---
-	CHEVRONS("Chevron scales", Surface.SCALE),
-	CHEVRON_DRIPS("Chevrons with drips", Surface.SCALE),
-	CHEVRON_LEAVES("Chevrons with leaves", Surface.SCALE),
-	CHEVRON_CRACKLE("Chevrons with crackle", Surface.SCALE),
 	CHANNEL("Centre channel", Surface.SCALE),
 	PLAIN_SCALES("Plain scales", Surface.SCALE),
-	HOLY_TRIM("Gold trim", Surface.CLOTH);
+	// --- reworked from the concept art ---
+	BLOOD("Bleeding cracks", Surface.ROCK),
+	OVERGROWN("Overgrown cracks", Surface.ROCK),
+	STORM("Storm cracks", Surface.ROCK),
+	SHATTERED("Shattered crystal", Surface.FACET),
+	HOLY("Holy feathers", Surface.SOFT);
 
 	/** What the background between the glowing lines is made of; drives its shading. */
 	enum Surface
@@ -103,66 +88,34 @@ public enum CapePattern
 	{
 		switch (this)
 		{
-			case CRACKS:
-				return cracks;
-			case LATTICE:
-				return lattice();
 			case SMOKE:
 				return smoke();
 			case SHARDS:
 				return voronoi(4, 1.6f, 11, false);
-			case DRIPS:
-				return drips();
-			case VINES:
-				return vines();
-			case BOLTS:
-				return bolts();
-			case RUNIC:
-				return runic();
-			case NEBULA:
-				return nebula();
-			case STRATA:
-				return strata();
-			case FACETS:
-				return voronoi(4, 1.4f, 23, false);
-			case QUILT:
-				return quilt();
-			case SCALES:
-				return scales();
-			case BUBBLES:
-				return bubbles();
 			case SPLINTERS:
 				return voronoi(5, 1.5f, 37, true);
 			case VESSELS:
 				return vessels();
 			case GLYPHS:
 				return glyphs();
-			case WAVES:
-				return waves();
-			case HERALDIC:
-				return heraldic();
 			case GRAIN:
 				return grain();
-			case TENDRILS:
-				return tendrils();
 			case FEATHERS:
 				return feathers();
-			case BRAID:
-				return braid();
-			case CHEVRONS:
-				return chevrons(0);
-			case CHEVRON_DRIPS:
-				return chevrons(1);
-			case CHEVRON_LEAVES:
-				return chevrons(2);
-			case CHEVRON_CRACKLE:
-				return chevrons(3);
 			case CHANNEL:
 				return channel();
 			case PLAIN_SCALES:
 				return plainScales();
-			case HOLY_TRIM:
-				return holyTrim();
+			case BLOOD:
+				return bleeding(cracks);
+			case OVERGROWN:
+				return overgrown(cracks);
+			case SHATTERED:
+				return shattered();
+			case HOLY:
+				return holy();
+			case STORM:
+			case CRACKS:
 			default:
 				return cracks;
 		}
@@ -299,27 +252,6 @@ public enum CapePattern
 
 	// ---------------------------------------------------------------- patterns
 
-	/** Holy: a gold diamond lattice with a small star at every crossing. */
-	private static float[] lattice()
-	{
-		Canvas c = new Canvas();
-		c.level(1f);
-		for (int i = -4; i <= 4; i++)
-		{
-			c.stroke(new Line2D.Float(i * 32, 0, i * 32 + 64, 128), 1.8f);
-			c.stroke(new Line2D.Float(i * 32, 128, i * 32 + 64, 0), 1.8f);
-		}
-		for (int y = 0; y < N; y += 64)
-		{
-			for (int x = 0; x < N; x += 32)
-			{
-				c.fill(starTall(x, y, 7f, 1.8f));
-				c.fill(starTall(x + 16, y + 32, 5f, 1.4f));
-			}
-		}
-		return glowLines(c.values(), 0.55f);
-	}
-
 	/** Shadow: soft contour lines of a drifting noise field, like rising smoke. */
 	private static float[] smoke()
 	{
@@ -380,296 +312,6 @@ public enum CapePattern
 			}
 		}
 		return glowLines(out, 0.4f);
-	}
-
-	/** Blood: streaks running down the cape, each ending in a heavy drop. */
-	private static float[] drips()
-	{
-		Canvas c = new Canvas();
-		Random r = new Random(5);
-		for (int i = 0; i < 12; i++)
-		{
-			float x = (i + r.nextFloat() * 0.6f) * (N / 12f);
-			float y0 = r.nextFloat() * N;
-			float len = 30 + r.nextFloat() * 60;
-			float w = 2.2f + r.nextFloat() * 2.4f;
-			c.level(0.75f + r.nextFloat() * 0.25f);
-			Path2D.Float p = new Path2D.Float();
-			p.moveTo(x, y0);
-			float wob = r.nextFloat() * 2 - 1;
-			p.quadTo(x + wob * 2, y0 + len / 2, x + wob, y0 + len);
-			c.stroke(p, w);
-			c.fill(new Ellipse2D.Float(x + wob - w * 0.9f, y0 + len - w * 0.5f, w * 1.8f, w * 2.3f));
-		}
-		return glowLines(c.values(), 0.5f);
-	}
-
-	/** Nature: winding vines with leaves. */
-	private static float[] vines()
-	{
-		Canvas c = new Canvas();
-		Random r = new Random(9);
-		for (int v = 0; v < 2; v++)
-		{
-			float x0 = v * 64 + 16 + r.nextFloat() * 24;
-			float amp = 10 + r.nextFloat() * 8;
-			float ph = r.nextFloat() * 6.28f;
-			Path2D.Float p = new Path2D.Float();
-			for (int y = 0; y <= N; y += 2)
-			{
-				float x = x0 + amp * (float) Math.sin(y * 2 * Math.PI / N * 2 + ph);
-				if (y == 0)
-				{
-					p.moveTo(x, y);
-				}
-				else
-				{
-					p.lineTo(x, y);
-				}
-			}
-			c.level(0.9f);
-			c.stroke(p, 2.2f);
-			// leaves alternate sides along the vine
-			for (int k = 0; k < 8; k++)
-			{
-				float y = k * (N / 8f) + 6;
-				float x = x0 + amp * (float) Math.sin(y * 2 * Math.PI / N * 2 + ph);
-				int side = (k % 2 == 0) ? 1 : -1;
-				Shape leaf = new Ellipse2D.Float(0, -3f, 13, 6f);
-				AffineTransform at = AffineTransform.getTranslateInstance(x, y);
-				at.rotate(side > 0 ? -0.5 : Math.PI + 0.5);
-				c.level(0.7f);
-				c.fill(at.createTransformedShape(leaf));
-			}
-		}
-		return glowLines(c.values(), 0.45f);
-	}
-
-	/** Lightning: jagged forked bolts running down the cape. */
-	private static float[] bolts()
-	{
-		Canvas c = new Canvas();
-		Random r = new Random(17);
-		for (int b = 0; b < 3; b++)
-		{
-			float startX = b * 43 + r.nextFloat() * 18;
-			float x = startX;
-			float y = 0;
-			Path2D.Float p = new Path2D.Float();
-			p.moveTo(x, y);
-			while (y < N)
-			{
-				float ny = Math.min(N, y + 6 + r.nextFloat() * 8);
-				// drift back toward the start x near the bottom so the bolt tiles seamlessly
-				float pull = (startX - x) * (ny / N) * (ny / N);
-				float nx = ny >= N ? startX : x + (r.nextFloat() * 2 - 1) * 9 + pull * 0.5f;
-				p.lineTo(nx, ny);
-				if (r.nextFloat() < 0.22f)
-				{
-					// a short fork
-					Path2D.Float f = new Path2D.Float();
-					f.moveTo(nx, ny);
-					float fx = nx, fy = ny;
-					for (int k = 0; k < 3; k++)
-					{
-						fx += (r.nextBoolean() ? 1 : -1) * (3 + r.nextFloat() * 5);
-						fy += 4 + r.nextFloat() * 5;
-						f.lineTo(fx, fy);
-					}
-					c.level(0.7f);
-					c.stroke(f, 1f);
-				}
-				x = nx;
-				y = ny;
-			}
-			c.level(1f);
-			c.stroke(p, 1.7f);
-		}
-		float[] lines = glowLines(c.values(), 0.6f);
-		// faint storm cloud behind the bolts
-		for (int i = 0; i < lines.length; i++)
-		{
-			float cloud = fbm(i % N, i / N, 61);
-			lines[i] = Math.max(lines[i], (cloud - 0.45f) * 0.35f);
-		}
-		return lines;
-	}
-
-	/**
-	 * Rune: rune-stone symbols (air, water, earth, fire, mind, body) carved into dark stone,
-	 * joined by a glowing channel running down each column.
-	 */
-	private static float[] runic()
-	{
-		Canvas c = new Canvas();
-		int[] cols = {32, 96};
-		for (int ci = 0; ci < cols.length; ci++)
-		{
-			float x = cols[ci];
-			c.level(0.55f);
-			c.stroke(new Line2D.Float(x, 0, x, N), 1.4f);
-			for (int k = 0; k < 2; k++)
-			{
-				float y = k * 64 + (ci == 0 ? 20 : 52);
-				int type = (ci * 2 + k) % 6;
-				float rw = 11, rh = 11 * TALL;
-				// the rune stone's ring
-				c.level(0.9f);
-				c.stroke(new Ellipse2D.Float(x - rw, y - rh, rw * 2, rh * 2), 1.6f);
-				c.level(1f);
-				AffineTransform at = AffineTransform.getTranslateInstance(x, y);
-				at.scale(1, TALL);
-				Path2D.Float g = new Path2D.Float();
-				switch (type)
-				{
-					case 0:
-						// air: a swirl
-						g.append(new Arc2D.Float(-6, -6, 12, 12, 90, 270, Arc2D.OPEN), false);
-						g.append(new Arc2D.Float(-3, -6, 6, 6, 270, 180, Arc2D.OPEN), false);
-						break;
-					case 1:
-						// water: a drop
-						g.moveTo(0, -7);
-						g.quadTo(6, 1, 0, 6);
-						g.quadTo(-6, 1, 0, -7);
-						break;
-					case 2:
-						// earth: a mound with a line
-						g.moveTo(-7, 5);
-						g.lineTo(0, -6);
-						g.lineTo(7, 5);
-						g.closePath();
-						g.moveTo(-4, 1);
-						g.lineTo(4, 1);
-						break;
-					default:
-						// fire: a flame
-						g.moveTo(0, -7);
-						g.quadTo(7, 0, 3, 6);
-						g.quadTo(0, 2, -3, 6);
-						g.quadTo(-7, 0, 0, -7);
-						break;
-				}
-				c.stroke(at.createTransformedShape(g), 1.6f);
-			}
-		}
-		return glowLines(c.values(), 0.5f);
-	}
-
-	/** Void: drifting nebula clouds scattered with stars. */
-	private static float[] nebula()
-	{
-		float[] out = new float[N * N];
-		Random r = new Random(29);
-		for (int y = 0; y < N; y++)
-		{
-			for (int x = 0; x < N; x++)
-			{
-				float warp = fbm(x, y, 71) * 30;
-				float n = fbm(x + Math.round(warp), y, 73);
-				float cloud = CapeTextures.clamp((n - 0.36f) * 2.4f);
-				out[y * N + x] = cloud * 0.74f;
-			}
-		}
-		for (int i = 0; i < 70; i++)
-		{
-			int x = r.nextInt(N), y = r.nextInt(N);
-			float b = 0.6f + r.nextFloat() * 0.4f;
-			out[y * N + x] = Math.max(out[y * N + x], b);
-			if (b > 0.93f)
-			{
-				// a few brighter stars with a tiny cross
-				out[y * N + (x + 1) % N] = Math.max(out[y * N + (x + 1) % N], 0.6f);
-				out[y * N + (x + N - 1) % N] = Math.max(out[y * N + (x + N - 1) % N], 0.6f);
-				out[((y + 1) % N) * N + x] = Math.max(out[((y + 1) % N) * N + x], 0.6f);
-				out[((y + N - 1) % N) * N + x] = Math.max(out[((y + N - 1) % N) * N + x], 0.6f);
-			}
-		}
-		return out;
-	}
-
-	/** Sandstone: layered, wavy rock strata with a few fault cracks. */
-	private static float[] strata()
-	{
-		float[] out = new float[N * N];
-		for (int y = 0; y < N; y++)
-		{
-			for (int x = 0; x < N; x++)
-			{
-				float warp = fbm(x, y, 81) * 14f + (float) Math.sin(x * 2 * Math.PI / N * 2) * 3f;
-				float layer = frac((y + warp) / 32f);
-				float line = CapeTextures.clamp(1f - Math.abs(layer - 0.5f) * 2f * 9f);
-				out[y * N + x] = line * 0.9f;
-			}
-		}
-		return glowLines(out, 0.3f);
-	}
-
-	/** Roguelike: diagonal quilting seams with stitch marks. */
-	private static float[] quilt()
-	{
-		Canvas c = new Canvas();
-		c.level(0.9f);
-		float[] dash = {3f, 3f};
-		for (int i = -4; i <= 6; i++)
-		{
-			c.g.setStroke(new BasicStroke(1.3f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10f, dash, 0f));
-			Shape a = new Line2D.Float(i * 32, 0, i * 32 + 64, 128);
-			Shape b = new Line2D.Float(i * 32, 128, i * 32 + 64, 0);
-			for (int dx = -N; dx <= N; dx += N)
-			{
-				for (int dy = -N; dy <= N; dy += N)
-				{
-					c.g.draw(AffineTransform.getTranslateInstance(dx, dy).createTransformedShape(a));
-					c.g.draw(AffineTransform.getTranslateInstance(dx, dy).createTransformedShape(b));
-				}
-			}
-		}
-		return glowLines(c.values(), 0.35f);
-	}
-
-	/** Golden: overlapping rows of rounded scales. */
-	private static float[] scales()
-	{
-		Canvas c = new Canvas();
-		c.level(1f);
-		int w = 32;
-		float h = w * TALL;
-		for (int row = 0; row < N / 16 + 1; row++)
-		{
-			float off = (row % 2 == 0) ? 0 : w / 2f;
-			for (int col = -1; col < N / w + 1; col++)
-			{
-				float cx = col * w + off;
-				float cy = row * 16;
-				c.stroke(new Arc2D.Float(cx - w / 2f, cy - h / 2f, w, h, 180, 180, Arc2D.OPEN), 1.8f);
-			}
-		}
-		return glowLines(c.values(), 0.5f);
-	}
-
-	/** Toxic: bubbles of every size rising through ooze. */
-	private static float[] bubbles()
-	{
-		Canvas c = new Canvas();
-		Random r = new Random(31);
-		for (int i = 0; i < 24; i++)
-		{
-			float s = 5 + (float) Math.pow(r.nextFloat(), 2) * 22;
-			float x = r.nextFloat() * N, y = r.nextFloat() * N;
-			c.level(0.95f);
-			c.stroke(new Ellipse2D.Float(x, y, s, s * TALL), s > 12 ? 1.8f : 1.3f);
-			// glint on the bubble
-			c.level(1f);
-			float gl = Math.max(1.5f, s * 0.18f);
-			c.fill(new Ellipse2D.Float(x + s * 0.22f, y + s * TALL * 0.2f, gl, gl * TALL));
-		}
-		float[] lines = glowLines(c.values(), 0.5f);
-		for (int i = 0; i < lines.length; i++)
-		{
-			lines[i] = Math.max(lines[i], (fbm(i % N, i / N, 91) - 0.5f) * 0.4f);
-		}
-		return lines;
 	}
 
 	/** Sanguine: a branching network of vessels (ridged noise). */
@@ -743,47 +385,6 @@ public enum CapePattern
 		return glowLines(c.values(), 0.4f);
 	}
 
-	/** Tidal: rows of concentric wave scallops. */
-	private static float[] waves()
-	{
-		Canvas c = new Canvas();
-		int w = 32;
-		for (int row = 0; row < N / 16 + 2; row++)
-		{
-			float off = (row % 2 == 0) ? 0 : w / 2f;
-			for (int col = -1; col < N / w + 1; col++)
-			{
-				float cx = col * w + off, cy = row * 16 + 16;
-				for (int ring = 0; ring < 3; ring++)
-				{
-					float rr = w / 2f - ring * 5f;
-					float rh = rr * TALL;
-					c.level(ring == 0 ? 1f : 0.6f);
-					c.stroke(new Arc2D.Float(cx - rr, cy - rh, rr * 2, rh * 2, 0, 180, Arc2D.OPEN), ring == 0 ? 1.8f : 1.2f);
-				}
-			}
-		}
-		return glowLines(c.values(), 0.4f);
-	}
-
-	/** Saradomin: gold trim stripes and stars on blue cloth. */
-	private static float[] heraldic()
-	{
-		Canvas c = new Canvas();
-		c.level(1f);
-		for (int x = 0; x < N; x += 64)
-		{
-			c.stroke(new Line2D.Float(x + 2, 0, x + 2, N), 1.3f);
-			c.stroke(new Line2D.Float(x + 6, 0, x + 6, N), 0.9f);
-		}
-		for (int y = 0; y < N; y += 32)
-		{
-			c.fill(starTall(36, y + 16, 8f, 2f));
-			c.fill(starTall(100, y, 5f, 1.4f));
-		}
-		return glowLines(c.values(), 0.5f);
-	}
-
 	/** Guthix: flowing wood grain with the odd knot. */
 	private static float[] grain()
 	{
@@ -805,45 +406,6 @@ public enum CapePattern
 			}
 		}
 		return glowLines(boxBlur(out, 1), 0.3f);
-	}
-
-	/** Abyssal: thick wavy tendrils with rows of suckers. */
-	private static float[] tendrils()
-	{
-		Canvas c = new Canvas();
-		Random r = new Random(53);
-		for (int t = 0; t < 3; t++)
-		{
-			float x0 = t * 43 + 10;
-			float amp = 8 + r.nextFloat() * 6;
-			float ph = r.nextFloat() * 6.28f;
-			Path2D.Float p = new Path2D.Float();
-			for (int y = 0; y <= N; y += 2)
-			{
-				float x = x0 + amp * (float) Math.sin(y * 2 * Math.PI / N + ph);
-				if (y == 0)
-				{
-					p.moveTo(x, y);
-				}
-				else
-				{
-					p.lineTo(x, y);
-				}
-			}
-			c.level(0.42f);
-			c.stroke(p, 10f);
-			c.level(1f);
-			c.stroke(p, 1.6f);
-			for (int k = 0; k < 10; k++)
-			{
-				float y = k * (N / 10f);
-				float x = x0 + amp * (float) Math.sin(y * 2 * Math.PI / N + ph);
-				c.level(0.9f);
-				c.stroke(new Ellipse2D.Float(x + 3.5f, y - 1.5f, 3, 3), 0.9f);
-				c.stroke(new Ellipse2D.Float(x - 6.5f, y + 4.5f, 3, 3), 0.9f);
-			}
-		}
-		return glowLines(c.values(), 0.35f);
 	}
 
 	/** Varlamore: rows of sunbird feathers, each a chevron with a central quill. */
@@ -873,35 +435,6 @@ public enum CapePattern
 					c.stroke(new Line2D.Float(cx, by + 4, cx - w * 0.28f, by), 0.8f);
 					c.stroke(new Line2D.Float(cx, by + 4, cx + w * 0.28f, by), 0.8f);
 				}
-			}
-		}
-		return glowLines(c.values(), 0.45f);
-	}
-
-	/** Twisted: two strands spiralling around each other down the cape. */
-	private static float[] braid()
-	{
-		Canvas c = new Canvas();
-		for (int strand = 0; strand < 3; strand++)
-		{
-			float x0 = strand * 128f / 3f + 21;
-			for (int s = 0; s < 2; s++)
-			{
-				Path2D.Float p = new Path2D.Float();
-				for (int y = 0; y <= N; y += 2)
-				{
-					float x = x0 + 12 * (float) Math.sin(y * 2 * Math.PI / N * 2 + s * Math.PI);
-					if (y == 0)
-					{
-						p.moveTo(x, y);
-					}
-					else
-					{
-						p.lineTo(x, y);
-					}
-				}
-				c.level(s == 0 ? 1f : 0.7f);
-				c.stroke(p, 2.4f);
 			}
 		}
 		return glowLines(c.values(), 0.45f);
@@ -940,83 +473,6 @@ public enum CapePattern
 	/** How far the point of each chevron sits below its arms, in texels (about 45 degrees when worn). */
 	private static final float DEPTH = 64f;
 
-	private static float[] chevrons(int extra)
-	{
-		Canvas c = new Canvas();
-		Random r = new Random(77 + extra);
-		int spacing = 64;
-		for (int k = -2; k <= N / spacing; k++)
-		{
-			float y0 = k * spacing;
-			Path2D.Float v = new Path2D.Float();
-			// jagged V: edges high, point low in the middle, with small teeth like the drawings
-			v.moveTo(0, y0);
-			for (int x = 0; x <= N; x += 8)
-			{
-				float d = Math.abs(x - 64) / 64f;
-				float y = y0 + (1 - d) * DEPTH + ((x / 8) % 2 == 0 ? 0 : 4f);
-				v.lineTo(x, y);
-			}
-			c.level(1f);
-			c.stroke(v, 3f);
-			// a thinner echo halfway between the main chevrons
-			c.level(0.55f);
-			c.stroke(AffineTransform.getTranslateInstance(0, spacing / 2f).createTransformedShape(v), 1.3f);
-			if (extra == 1)
-			{
-				// blood: drips hanging off the V
-				for (int i = 0; i < 4; i++)
-				{
-					float x = 10 + r.nextFloat() * 108;
-					float d = Math.abs(x - 64) / 64f;
-					float y = y0 + (1 - d) * DEPTH + 2;
-					float len = 4 + r.nextFloat() * 9;
-					c.level(0.9f);
-					c.stroke(new Line2D.Float(x, y, x, y + len), 1.6f);
-					c.fill(new Ellipse2D.Float(x - 1.6f, y + len - 1, 3.2f, 3.2f * TALL));
-				}
-			}
-			else if (extra == 2)
-			{
-				// nature: leaves sprouting along the V
-				for (int i = 0; i < 4; i++)
-				{
-					float x = 12 + i * 32 + r.nextFloat() * 8;
-					float d = Math.abs(x - 64) / 64f;
-					float y = y0 + (1 - d) * DEPTH;
-					AffineTransform at = AffineTransform.getTranslateInstance(x, y);
-					at.rotate((i % 2 == 0 ? -1 : 1) * (0.6 + r.nextFloat() * 0.5));
-					at.scale(1, TALL * 0.8);
-					c.level(0.75f);
-					c.fill(at.createTransformedShape(new Ellipse2D.Float(0, -2.5f, 10, 5)));
-				}
-			}
-			else if (extra == 3)
-			{
-				// lightning: small crackles leaping off the V
-				for (int i = 0; i < 3; i++)
-				{
-					float x = 8 + r.nextFloat() * 112;
-					float d = Math.abs(x - 64) / 64f;
-					float y = y0 + (1 - d) * DEPTH;
-					Path2D.Float z = new Path2D.Float();
-					z.moveTo(x, y);
-					float zx = x, zy = y;
-					int dir = r.nextBoolean() ? 1 : -1;
-					for (int s = 0; s < 3; s++)
-					{
-						zx += dir * (2 + r.nextFloat() * 3);
-						zy += (s % 2 == 0 ? 4 : -2) + r.nextFloat() * 2;
-						z.lineTo(zx, zy);
-					}
-					c.level(0.85f);
-					c.stroke(z, 1.1f);
-				}
-			}
-		}
-		return combineWithScales(glowLines(c.values(), 0.55f), 0.18f);
-	}
-
 	/** Rune / Void: a glowing channel down the centre with faint side lines, over scales. */
 	private static float[] channel()
 	{
@@ -1050,21 +506,6 @@ public enum CapePattern
 		return out;
 	}
 
-	/** Holy: gold trim down both edges and the centre, over faint feathered scales. */
-	private static float[] holyTrim()
-	{
-		Canvas c = new Canvas();
-		c.level(1f);
-		c.stroke(new Line2D.Float(3, 0, 3, N), 2.4f);
-		c.stroke(new Line2D.Float(125, 0, 125, N), 2.4f);
-		c.level(0.75f);
-		c.stroke(new Line2D.Float(9, 0, 9, N), 1f);
-		c.stroke(new Line2D.Float(119, 0, 119, N), 1f);
-		c.level(0.9f);
-		c.stroke(new Line2D.Float(64, 0, 64, N), 1.4f);
-		return combineWithScales(glowLines(c.values(), 0.5f), 0.12f);
-	}
-
 	private static float[] combineWithScales(float[] lines, float scaleLevel)
 	{
 		float[] sc = scaleOutlines(1f);
@@ -1075,31 +516,167 @@ public enum CapePattern
 		return lines;
 	}
 
-	private static Shape starTall(float cx, float cy, float outer, float inner)
+	/** Blood: the cape's own cracks, with blood running off the bottom of the veins. */
+	private static float[] bleeding(float[] cracks)
 	{
-		AffineTransform at = AffineTransform.getTranslateInstance(cx, cy);
-		at.scale(1, TALL);
-		return at.createTransformedShape(star(0, 0, outer, inner));
+		float[] out = cracks.clone();
+		Canvas c = new Canvas();
+		Random r = new Random(13);
+		int made = 0;
+		for (int tries = 0; tries < 8000 && made < 16; tries++)
+		{
+			int x = r.nextInt(N), y = r.nextInt(N);
+			if (cracks[y * N + x] < 0.7f)
+			{
+				continue;
+			}
+			// walk down to the bottom edge of the vein
+			int yb = y;
+			while (yb - y < 10 && cracks[((yb + 1) % N) * N + x] > 0.35f)
+			{
+				yb++;
+			}
+			if (cracks[((yb + 1) % N) * N + x] > 0.2f)
+			{
+				continue;
+			}
+			float len = 14 + (float) Math.pow(r.nextFloat(), 1.3) * 22;
+			float w = 4f + r.nextFloat() * 2f;
+			// a tapered run of blood ending in a heavy drop
+			Path2D.Float run = new Path2D.Float();
+			run.moveTo(x - w * 0.6f, yb - 1);
+			run.lineTo(x + w * 0.6f, yb - 1);
+			run.quadTo(x + w * 0.3f, yb + len * 0.6f, x + w * 0.25f, yb + len);
+			run.lineTo(x - w * 0.25f, yb + len);
+			run.quadTo(x - w * 0.3f, yb + len * 0.6f, x - w * 0.6f, yb - 1);
+			run.closePath();
+			c.level(0.82f + r.nextFloat() * 0.18f);
+			c.fill(run);
+			float d = w * 1.6f;
+			c.fill(new Ellipse2D.Float(x - d / 2, yb + len - d * 0.5f, d, d * TALL));
+			made++;
+		}
+		float[] drips = glowLines(c.values(), 0.3f);
+		for (int i = 0; i < out.length; i++)
+		{
+			out[i] = Math.max(out[i], drips[i]);
+		}
+		return out;
 	}
 
-	private static Shape star(float cx, float cy, float outer, float inner)
+	/** Nature: the cape's own cracks, overgrown with leaves clinging along the glowing veins. */
+	private static float[] overgrown(float[] cracks)
 	{
-		Path2D.Float p = new Path2D.Float();
-		for (int i = 0; i < 8; i++)
+		float[] out = new float[N * N];
+		for (int i = 0; i < out.length; i++)
 		{
-			double a = Math.PI * i / 4 - Math.PI / 2;
-			float r = (i % 2 == 0) ? outer : inner;
-			float x = cx + (float) Math.cos(a) * r, y = cy + (float) Math.sin(a) * r;
-			if (i == 0)
+			out[i] = cracks[i] * 0.95f;
+		}
+		Canvas c = new Canvas();
+		Random r = new Random(19);
+		int made = 0;
+		for (int tries = 0; tries < 12000 && made < 55; tries++)
+		{
+			int x = r.nextInt(N), y = r.nextInt(N);
+			if (cracks[y * N + x] < 0.75f)
 			{
-				p.moveTo(x, y);
+				continue;
 			}
-			else
+			float len = 10 + r.nextFloat() * 6;
+			float wid = len * 0.4f;
+			AffineTransform at = AffineTransform.getTranslateInstance(x, y);
+			at.scale(1, TALL);
+			at.rotate(r.nextDouble() * Math.PI * 2);
+			Path2D.Float leaf = new Path2D.Float();
+			leaf.moveTo(0, 0);
+			leaf.quadTo(len * 0.5f, -wid, len, 0);
+			leaf.quadTo(len * 0.5f, wid, 0, 0);
+			leaf.closePath();
+			// leaves sit just below the vein glow so they read as darker green foliage
+			c.level(0.5f + r.nextFloat() * 0.1f);
+			c.fill(at.createTransformedShape(leaf));
+			c.level(0.68f);
+			c.stroke(at.createTransformedShape(new Line2D.Float(1, 0, len - 2f, 0)), 0.9f);
+			made++;
+		}
+		float[] leaves = c.values();
+		for (int i = 0; i < out.length; i++)
+		{
+			if (leaves[i] > 0.05f)
 			{
-				p.lineTo(x, y);
+				out[i] = Math.max(leaves[i], out[i] * 0.6f);
 			}
 		}
-		p.closePath();
-		return p;
+		return out;
+	}
+
+	/**
+	 * Crystal: elongated crystal shards with dark fracture gaps, bright rims and a few internal
+	 * facet edges. Heat runs 0 (shard face) to ~0.6 (bright rim) to 1 (the dark gap itself).
+	 */
+	private static float[] shattered()
+	{
+		float[] out = voronoi(5, 1.1f, 61, true);
+		Canvas c = new Canvas();
+		Random r = new Random(67);
+		for (int i = 0; i < 40; i++)
+		{
+			float x = r.nextFloat() * N, y = r.nextFloat() * N;
+			double ang = r.nextDouble() * Math.PI;
+			float len = 6 + r.nextFloat() * 10;
+			c.level(0.58f);
+			c.stroke(new Line2D.Float(x, y, x + (float) Math.cos(ang) * len, y + (float) Math.sin(ang) * len * TALL), 0.9f);
+		}
+		float[] facets = c.values();
+		for (int i = 0; i < out.length; i++)
+		{
+			out[i] = Math.max(out[i], facets[i]);
+		}
+		return out;
+	}
+
+	/**
+	 * Holy: soft layered white feathers with gold seams and studs down the centre (the star
+	 * emblems sit on the seam). The gold rim around the cape comes from its recoloured trim.
+	 */
+	private static float[] holy()
+	{
+		Canvas c = new Canvas();
+		float w = N / 6f;
+		int h = 32;
+		for (int row = 0; row < N / h + 2; row++)
+		{
+			float off = (row % 2 == 0) ? 0 : w / 2f;
+			for (int col = -1; col < 7; col++)
+			{
+				float cx = col * w + off + w / 2f, top = row * h - 8;
+				Path2D.Float f = new Path2D.Float();
+				f.moveTo(cx - w / 2f, top);
+				f.quadTo(cx - w / 2f, top + h * 0.95f, cx, top + h * 1.25f);
+				f.quadTo(cx + w / 2f, top + h * 0.95f, cx + w / 2f, top);
+				c.level(0.25f);
+				c.stroke(f, 1f);
+				c.level(0.21f);
+				c.stroke(new Line2D.Float(cx, top + 4, cx, top + h * 1.05f), 0.7f);
+			}
+		}
+		// gold seams: one down the centre, a finer pair either side
+		c.level(0.7f);
+		c.stroke(new Line2D.Float(44, 0, 44, N), 1.1f);
+		c.stroke(new Line2D.Float(84, 0, 84, N), 1.1f);
+		c.level(0.95f);
+		c.stroke(new Line2D.Float(64, 0, 64, N), 2.2f);
+		for (int y = 16; y < N; y += 32)
+		{
+			Path2D.Float d = new Path2D.Float();
+			d.moveTo(64, y - 4 * TALL);
+			d.lineTo(67, y);
+			d.lineTo(64, y + 4 * TALL);
+			d.lineTo(61, y);
+			d.closePath();
+			c.level(1f);
+			c.fill(d);
+		}
+		return glowLines(c.values(), 0.35f);
 	}
 }

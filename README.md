@@ -1,6 +1,6 @@
 # Infernal Variants
 
-Repaint your infernal cape in 26 designs, or recolour any of them yourself. The styles from the original concept art use dark scales with glowing chevron seams and their own touches (drips, leaves, crackles, rune circles, blue hem fire); Ice and Shadow have their own shards and smoke; the lore styles have their own patterns; and everything flows down the cape.
+Repaint your infernal cape in 17 designs, or recolour any of them yourself. Several keep the real cape's crack pattern with their own touches (blood running off the veins, leaves growing over them, lightning flashing across them); Ice, Shadow, Crystal and Holy have their own designs; and everything flows down the cape.
 
 ![animated preview](preview.gif)
 
@@ -9,31 +9,22 @@ Repaint your infernal cape in 26 designs, or recolour any of them yourself. The 
 | Style | Look |
 |---|---|
 | Infernal (original) | Untouched lava |
-| Holy | White cloth with gold trim down the edges and centre, holy star emblems |
+| Holy | Ivory feathers with gold seams and studs down the centre, gold collar and hem, holy star emblems |
 | Shadow | Drifting purple smoke wisps on black |
 | Ice | Shattered ice shards with frosted edges |
-| Blood | Glowing red chevrons over dark scales, with blood dripping from each chevron |
-| Nature | Green chevrons with leaves sprouting along them, over mossy scales, leaf emblems |
-| Lightning | Yellow chevrons with crackles leaping off them |
+| Blood | The infernal cracks in deep red, with blood running off the veins |
+| Nature | The infernal cracks in green, overgrown with leaves along the glowing veins |
+| Lightning | The infernal cracks in electric yellow, with forked bolts flashing across the stone |
 | Rune | Dark teal scales with a glowing channel and rune circles down the centre |
-| Dragonfire | Red-orange chevrons that burn blue toward the hem |
 | Void | Purple channel down the centre with the void eye emblem |
 | Sandstone | Weathered sandstone scales |
-| Crystal | Prismatic chevrons on dark crystal scales |
-| Roguelike | Dim crimson chevrons on black scales, hood sigil |
-| Golden | Gold chevrons on dark scales with a polished sheen |
-| Toxic | Bubbling venom ooze |
+| Crystal | Shattered crystal shards, each its own pale colour, with bright rims and dark fractures |
 | Corrupted | Jagged red crystal splinters |
 | Sanguine | Branching gold-and-blood vessels |
 | Amascut | Desert bands of zigzags, sun discs, ankhs and eyes, sun emblem |
-| Tidal | Rows of rolling wave scallops |
-| Saradomin | Blue cloth with gold trim and stars, Saradomin star |
-| Zamorak | Hellfire cracks, Zamorak crest |
 | Guthix | Flowing wood grain with knots, balance emblem |
-| Abyssal | Writhing tendrils with suckers |
 | Tormented | Demon-green fire cracks with sparks |
 | Varlamore Sunset | Sunbird feathers fading from orange to dusk purple |
-| Twisted | Twisting braided strands, twisted bow emblem |
 | Custom | Any design (Ice shards, Shadow smoke or any other) in your own colours |
 
 ## Settings
@@ -48,18 +39,18 @@ Repaint your infernal cape in 26 designs, or recolour any of them yourself. The 
 
 ## Motion
 On every style the veins flow down the cape, each at its own pace, with a glow that moves in its own way:
-- **Flow** — a steady downward drift with a gentle glow (Blood, Toxic, Sandstone).
-- **Pulse** — the glow swells and fades (Shadow, Void, Nature, Sanguine, Abyssal, Guthix, Roguelike).
-- **Flicker** — irregular electric crackle with sudden surges (Lightning, Corrupted).
-- **Shimmer** — a band of light sweeps from collar to hem (Holy, Ice, Crystal, Golden, Amascut, Saradomin).
-- **Ripple** — soft waves travel down the cape (Rune, Tidal, Twisted).
-- **Burn** — uneven firelight, hottest at the hem (Dragonfire, Zamorak, Tormented, Varlamore Sunset).
+- **Flow** — a steady downward drift with a gentle glow (Blood, Sandstone).
+- **Pulse** — the glow swells and fades (Shadow, Void, Nature, Sanguine, Guthix).
+- **Flicker** — irregular electric crackle with sudden surges (Corrupted; Lightning also throws bolts across the stone).
+- **Shimmer** — a band of light sweeps from collar to hem (Holy, Ice, Crystal, Amascut).
+- **Ripple** — soft waves travel down the cape (Rune).
+- **Burn** — uneven firelight, hottest at the hem (Tormented, Varlamore Sunset).
 
 Emblems glow softly and breathe with the veins.
 
 ## Art details
 - Every pattern is drawn to look right when worn: the cape stretches its texture, so round motifs are pre-shaped to stay round.
-- Each pattern sits on its own material: small lit scales (the concept-art styles), lit rock (cracks, strata), woven cloth (Holy, Saradomin), polished metal, flat crystal faces (Ice, Corrupted) or soft surfaces (Shadow).
+- Each pattern sits on its own material: lit rock (the crack styles), small lit scales (Rune, Void, Sandstone), flat crystal faces (Ice, Crystal, Corrupted) or soft surfaces (Shadow, Holy).
 - The glowing lines are two-tone: a hot core plus a glow that spills onto the surface in a second colour.
 
 ## How it works

@@ -360,6 +360,7 @@ public class InfernalVariantsPlugin extends Plugin
 		veinTextures.remove(c);
 		hemTextures.remove(c);
 		glowTextures.remove(c);
+		boltFrames.remove(c);
 		looks.remove(c);
 		emblemGlows.remove(c);
 		emblemSprites.remove(c);
@@ -428,6 +429,18 @@ public class InfernalVariantsPlugin extends Plugin
 	BufferedImage emblemGlow(CapeStyle style)
 	{
 		return emblemGlows.computeIfAbsent(style, CapeTextures::glowSprite);
+	}
+
+	private final Map<CapeStyle, BufferedImage[]> boltFrames = new EnumMap<>(CapeStyle.class);
+
+	/** Lightning bolt frames for styles that use the storm pattern, otherwise null. */
+	BufferedImage[] boltFrames(CapeStyle style)
+	{
+		if (analysis == null || style.pattern() != CapePattern.STORM)
+		{
+			return null;
+		}
+		return boltFrames.computeIfAbsent(style, s -> CapeTextures.boltFrames(s, analysisFor(s.pattern())));
 	}
 
 	StyleLook look(CapeStyle style)

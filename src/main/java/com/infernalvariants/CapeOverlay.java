@@ -55,13 +55,9 @@ class CapeOverlay extends Overlay
 		{"CS", "CL"},                    // STAR
 		{"C1", "C2", "C3"},              // RUNES
 		{"C2", "C1", "C3"},              // VOID
-		{"CS"},                          // HOOD
 		{"LS", "RS", "LL", "RL"},        // LEAVES
 		{"CS"},                          // SUN
-		{"CS", "CL"},                    // SARADOMIN
-		{"CS"},                          // ZAMORAK
 		{"CS"},                          // GUTHIX
-		{"CS"},                          // TWISTED
 	};
 	/** Emblem size in model units, per slot. */
 	private static final float[][] EMBLEM_SIZES = {
@@ -69,13 +65,9 @@ class CapeOverlay extends Overlay
 		{24, 12},
 		{13, 13, 13},
 		{22, 9, 9},
-		{20},
 		{10, 10, 10, 10},
 		{22},
-		{27, 11},
-		{20},
 		{21},
-		{27},
 	};
 	/** Which sprite variant each slot uses. */
 	private static final int[][] EMBLEM_SPRITE = {
@@ -83,11 +75,7 @@ class CapeOverlay extends Overlay
 		{0, 0},
 		{0, 1, 2},
 		{0, 1, 1},
-		{0},
 		{0, 1, 2, 3},
-		{0},
-		{0, 0},
-		{0},
 		{0},
 		{0},
 	};
@@ -350,6 +338,30 @@ class CapeOverlay extends Overlay
 		TexturePaint[] paints = new TexturePaint[texMips.length];
 		TexturePaint[] hemPaints = hemMips == null ? null : new TexturePaint[hemMips.length];
 		TexturePaint[] glowPaints = glowMips == null ? null : new TexturePaint[glowMips.length];
+		// lightning: a bolt flashes across the stone every so often
+		BufferedImage[] boltMips = null;
+		float boltAlpha = 0f;
+		BufferedImage[] bolts = plugin.boltFrames(style);
+		if (bolts != null && animate)
+		{
+			final float slot = 0.45f;
+			long n = (long) Math.floor(t / slot);
+			long hsh = n * 0x9E3779B97F4A7C15L;
+			hsh ^= (hsh >>> 29);
+			if ((hsh & 7) < 5)
+			{
+				float ph = (t - n * slot) / slot;
+				// flash, dip, flash again, fade
+				boltAlpha = ph < 0.12f ? 1f : ph < 0.2f ? 0.25f : ph < 0.3f ? 0.95f : Math.max(0f, 1f - (ph - 0.3f) * 2.2f);
+				boltMips = mips.of(bolts[(int) ((hsh >>> 8) % bolts.length)]);
+			}
+		}
+		else if (bolts != null)
+		{
+			boltMips = mips.of(bolts[0]);
+			boltAlpha = 0.8f;
+		}
+		TexturePaint[] boltPaints = boltMips == null ? null : new TexturePaint[boltMips.length];
 
 		faces.sort((x, y) -> Float.compare(y.depth, x.depth));
 		AffineTransform base = g.getTransform();
@@ -370,6 +382,7 @@ class CapeOverlay extends Overlay
 			TexturePaint paint = paintAt(paints, texMips, level, anchor);
 			TexturePaint hemPaint = paintAt(hemPaints, hemMips, level, anchor);
 			TexturePaint glowPaint = paintAt(glowPaints, glowMips, level, anchor);
+			TexturePaint boltPaint = paintAt(boltPaints, boltMips, level, anchor);
 			g.setTransform(base);
 			g.transform(at);
 			g.setPaint(paint);
@@ -396,6 +409,8 @@ class CapeOverlay extends Overlay
 			if (glowPaint != null)
 			{
 				float a = animate ? look.glowAlpha(t, pf.hemness, pf.order * 0.37f) : (look.glowMin + look.glowMax) * 0.5f;
+				// the cracks flare up when a bolt strikes
+				a = Math.min(1f, a + boltAlpha * 0.6f);
 				if (a > 0.02f)
 				{
 					g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, a));
@@ -403,6 +418,13 @@ class CapeOverlay extends Overlay
 					g.fill(tri);
 					g.setComposite(baseComposite);
 				}
+			}
+			if (boltPaint != null && boltAlpha > 0.02f)
+			{
+				g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, boltAlpha));
+				g.setPaint(boltPaint);
+				g.fill(tri);
+				g.setComposite(baseComposite);
 			}
 		}
 		g.setTransform(base);

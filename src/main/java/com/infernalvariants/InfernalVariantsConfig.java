@@ -34,7 +34,7 @@ public interface InfernalVariantsConfig extends Config
 	)
 	default CapeStyle style()
 	{
-		return CapeStyle.DRAGONFIRE;
+		return CapeStyle.ICE;
 	}
 
 	@ConfigItem(

@@ -13,8 +13,8 @@ public enum CapeStyle
 	INFERNAL("Infernal (original)", null, -1, 0, 0, -1, 0, Special.NONE, Emblem.NONE),
 
 	HOLY("Holy",
-		grad(0f, 0xD2CCBC, .25f, 0xE2DCC8, .45f, 0xE6BE5A, .75f, 0xF8D670, 1f, 0xFFF8D2),
-		8, 1, 44, 9, 4, Special.NONE, Emblem.STAR),
+		grad(0f, 0xEEE8DA, .2f, 0xE4DAC4, .3f, 0xC4B48E, .5f, 0xC08A26, .8f, 0xF0C858, 1f, 0xFFF6CC),
+		9, 5, 40, 9, 6, Special.NONE, Emblem.STAR),
 
 	SHADOW("Shadow",
 		grad(0f, 0x110C18, .3f, 0x2E124A, .6f, 0x7634BE, 1f, 0xD6A0FF),
@@ -25,24 +25,20 @@ public enum CapeStyle
 		36, 2, 6, 36, 6, Special.FROST, Emblem.NONE),
 
 	BLOOD("Blood",
-		grad(0f, 0x140808, .3f, 0x460608, .6f, 0xAA0E14, 1f, 0xF6483C),
+		grad(0f, 0x120606, .3f, 0x3E0406, .6f, 0xA80A12, .85f, 0xE82A24, 1f, 0xFF6A50),
 		0, 2, 0, 0, 7, Special.NONE, Emblem.NONE),
 
 	NATURE("Nature",
-		grad(0f, 0x1A1E14, .3f, 0x243E18, .6f, 0x4E982E, 1f, 0xB8EC68),
-		18, 2, 2, 18, 6, Special.MOSS, Emblem.LEAVES),
+		grad(0f, 0x161A10, .3f, 0x1E3414, .5f, 0x2E5A1C, .62f, 0x4E982E, 1f, 0xC0F070),
+		18, 2, 2, 18, 6, Special.MOSS, Emblem.NONE),
 
 	LIGHTNING("Lightning",
-		grad(0f, 0x121316, .3f, 0x4A420E, .6f, 0xF0D020, .85f, 0xFFF29A, 1f, 0xFFFFFF),
+		grad(0f, 0x111216, .3f, 0x3A3410, .6f, 0xE8C21C, .85f, 0xFFEE8A, 1f, 0xFFFFF0),
 		9, 1, 0, 10, 7, Special.NONE, Emblem.NONE),
 
 	RUNE("Rune",
 		grad(0f, 0x0C161C, .3f, 0x0E3A48, .6f, 0x1A96B4, 1f, 0x96F4FF),
 		32, 2, 0, 32, 6, Special.NONE, Emblem.RUNES),
-
-	DRAGONFIRE("Dragonfire",
-		grad(0f, 0x160907, .3f, 0x601008, .6f, 0xDE3410, 1f, 0xFFB446),
-		0, 2, 0, 1, 7, Special.DRAGON, Emblem.NONE),
 
 	VOID("Void",
 		grad(0f, 0x0C0912, .35f, 0x24103A, .65f, 0x602C96, 1f, 0xBA6EF0),
@@ -53,20 +49,8 @@ public enum CapeStyle
 		7, 3, 30, 7, 3, Special.GRAIN, Emblem.NONE),
 
 	CRYSTAL("Crystal",
-		grad(0f, 0x18202C, .3f, 0x2A4A66, .6f, 0x7ADCE8, 1f, 0xF6FFFF),
-		34, 1, 14, 34, 4, Special.PRISM, Emblem.NONE),
-
-	ROGUELIKE("Roguelike",
-		grad(0f, 0x0E0C0C, .35f, 0x1E0E0E, .65f, 0x78141A, 1f, 0xC42E2E),
-		0, 1, 0, 0, 6, Special.NONE, Emblem.HOOD),
-
-	GOLDEN("Golden",
-		grad(0f, 0x24190C, .3f, 0x5A3A0A, .6f, 0xC8881A, .85f, 0xF2C04A, 1f, 0xFFE494),
-		8, 2, 4, 8, 6, Special.SHEEN, Emblem.NONE),
-
-	TOXIC("Toxic",
-		grad(0f, 0x0C1614, .3f, 0x0E3A2C, .6f, 0x3CC23A, 1f, 0xC8FF6A),
-		26, 2, 0, 20, 6, Special.NONE, Emblem.NONE),
+		grad(0f, 0x86AAC2, .35f, 0xB4D4E8, .6f, 0xF8FFFF, .8f, 0x9ED6F0, 1f, 0x182234),
+		34, 1, 40, 34, 3, Special.PRISM, Emblem.NONE),
 
 	CORRUPTED("Corrupted",
 		grad(0f, 0x1A0A0E, .3f, 0x52121C, .6f, 0xD8303C, 1f, 0xFFB0B4),
@@ -80,25 +64,9 @@ public enum CapeStyle
 		grad(0f, 0x6E5434, .3f, 0x8A6A3A, .6f, 0xE6B64A, 1f, 0xFFF0B4),
 		7, 3, 22, 9, 6, Special.GRAIN, Emblem.SUN),
 
-	TIDAL("Tidal",
-		grad(0f, 0x081624, .3f, 0x0C3450, .6f, 0x2AB49C, 1f, 0xC8FFF0),
-		38, 3, 2, 30, 6, Special.NONE, Emblem.NONE),
-
-	SARADOMIN("Saradomin",
-		grad(0f, 0x16244A, .3f, 0x22407C, .6f, 0xE2B442, 1f, 0xFFF4C0),
-		40, 3, 6, 9, 6, Special.NONE, Emblem.SARADOMIN),
-
-	ZAMORAK("Zamorak",
-		grad(0f, 0x100808, .3f, 0x3A0A0A, .6f, 0xC4201A, 1f, 0xFF8A50),
-		0, 2, 0, 0, 7, Special.NONE, Emblem.ZAMORAK),
-
 	GUTHIX("Guthix",
 		grad(0f, 0x2A2416, .3f, 0x3C3A1E, .6f, 0x5EA040, 1f, 0xD8F09A),
 		10, 3, 6, 18, 5, Special.NONE, Emblem.GUTHIX),
-
-	ABYSSAL("Abyssal",
-		grad(0f, 0x140A0E, .3f, 0x3C0E1E, .6f, 0x8E1E48, 1f, 0xF07AA0),
-		58, 2, 0, 60, 6, Special.NONE, Emblem.NONE),
 
 	TORMENTED("Tormented",
 		grad(0f, 0x0C0E0A, .3f, 0x1E2A0E, .6f, 0x5AC81E, 1f, 0xDCFF8A),
@@ -108,22 +76,18 @@ public enum CapeStyle
 		grad(0f, 0x1C0E16, .3f, 0x5A1A1E, .6f, 0xF07A2A, 1f, 0xFFE08A),
 		54, 2, 0, 5, 7, Special.SUNSET, Emblem.NONE),
 
-	TWISTED("Twisted",
-		grad(0f, 0x0A100C, .3f, 0x14301E, .6f, 0x2E8A54, 1f, 0xA8F0C0),
-		22, 2, 0, 24, 5, Special.NONE, Emblem.TWISTED),
-
 	CUSTOM("Custom (pick colours)",
 		grad(0f, 0x101010, .3f, 0x303030, .6f, 0x808080, 1f, 0xFFFFFF),
 		0, 0, 0, 0, 0, Special.NONE, Emblem.NONE);
 
 	enum Special
 	{
-		NONE, DRAGON, GRAIN, PRISM, FROST, MOSS, SHEEN, SUNSET, STARS
+		NONE, GRAIN, PRISM, FROST, MOSS, SUNSET, STARS
 	}
 
 	enum Emblem
 	{
-		NONE, STAR, RUNES, VOID, HOOD, LEAVES, SUN, SARADOMIN, ZAMORAK, GUTHIX, TWISTED
+		NONE, STAR, RUNES, VOID, LEAVES, SUN, GUTHIX
 	}
 
 	private final String displayName;
@@ -186,55 +150,38 @@ public enum CapeStyle
 		switch (this)
 		{
 			case HOLY:
-				return CapePattern.HOLY_TRIM;
+				return CapePattern.HOLY;
 			case SHADOW:
 				return CapePattern.SMOKE;
 			case ICE:
 				return CapePattern.SHARDS;
 			case BLOOD:
-				return CapePattern.CHEVRON_DRIPS;
+				return CapePattern.BLOOD;
 			case NATURE:
-				return CapePattern.CHEVRON_LEAVES;
+				return CapePattern.OVERGROWN;
 			case LIGHTNING:
-				return CapePattern.CHEVRON_CRACKLE;
+				return CapePattern.STORM;
 			case RUNE:
-				return CapePattern.CHANNEL;
 			case VOID:
 				return CapePattern.CHANNEL;
 			case SANDSTONE:
 				return CapePattern.PLAIN_SCALES;
 			case CRYSTAL:
-				return CapePattern.CHEVRONS;
-			case ROGUELIKE:
-				return CapePattern.CHEVRONS;
-			case GOLDEN:
-				return CapePattern.CHEVRONS;
-			case TOXIC:
-				return CapePattern.BUBBLES;
+				return CapePattern.SHATTERED;
 			case CORRUPTED:
 				return CapePattern.SPLINTERS;
 			case SANGUINE:
 				return CapePattern.VESSELS;
 			case AMASCUT:
 				return CapePattern.GLYPHS;
-			case TIDAL:
-				return CapePattern.WAVES;
-			case SARADOMIN:
-				return CapePattern.HERALDIC;
 			case GUTHIX:
 				return CapePattern.GRAIN;
-			case ABYSSAL:
-				return CapePattern.TENDRILS;
 			case VARLAMORE:
 				return CapePattern.FEATHERS;
-			case TWISTED:
-				return CapePattern.BRAID;
-			case DRAGONFIRE:
-				return CapePattern.CHEVRONS;
 			case CUSTOM:
 				return base() == CUSTOM ? CapePattern.CRACKS : base().pattern();
 			default:
-				// Infernal, Zamorak and Tormented keep the lava cracks
+				// Infernal and Tormented keep the lava cracks
 				return CapePattern.CRACKS;
 		}
 	}

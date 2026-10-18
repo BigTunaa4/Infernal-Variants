@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Polygon;
 import java.awt.RenderingHints;
+import java.awt.Shape;
 import java.awt.image.BufferedImage;
 import java.util.Random;
 
@@ -180,11 +181,11 @@ final class CapeTextures
 	}
 
 	/**
-	 * A second texture faded in toward the hem (Dragonfire burns blue, Varlamore Sunset fades to dusk).
+	 * A second texture faded in toward the hem (Varlamore Sunset fades to dusk).
 	 */
 	static boolean hasHem(CapeStyle style)
 	{
-		return style.special() == CapeStyle.Special.DRAGON || style.special() == CapeStyle.Special.SUNSET;
+		return style.special() == CapeStyle.Special.SUNSET;
 	}
 
 	static BufferedImage hemTexture(CapeStyle style, Analysis an)
@@ -194,13 +195,10 @@ final class CapeTextures
 			return null;
 		}
 		float[] p = {0f, .3f, .6f, 1f};
-		int[] c = style.special() == CapeStyle.Special.DRAGON
-			// dragonfire: the veins burn blue at the bottom
-			? new int[]{0x120808, 0x14185A, 0x3A6CFF, 0xD0E8FF}
-			// varlamore sunset: warm orange fades into dusk purple toward the hem
-			: new int[]{0x140A1C, 0x3A1450, 0xA846D2, 0xF6C8FF};
+		// varlamore sunset: warm orange fades into dusk purple toward the hem
+		int[] c = {0x140A1C, 0x3A1450, 0xA846D2, 0xF6C8FF};
 		StyleLook base = StyleLook.of(style);
-		int halo = style.special() == CapeStyle.Special.DRAGON ? 0x10208A : 0x5A1478;
+		int halo = 0x5A1478;
 		StyleLook look = base.withHalo(halo);
 		return paint(style, an, p, c, look, true);
 	}
@@ -215,11 +213,22 @@ final class CapeTextures
 		StyleLook look = StyleLook.of(style);
 		BufferedImage img = new BufferedImage(SIZE, SIZE, BufferedImage.TYPE_INT_ARGB);
 		boolean dark = style == CapeStyle.SANDSTONE;
+		// shattered crystal glows on the bright shard rims, not in the dark gaps between them
+		boolean rims = style.special() == CapeStyle.Special.PRISM;
+		if (rims)
+		{
+			core = 0xFFFFFF;
+		}
 		for (int i = 0; i < SIZE * SIZE; i++)
 		{
 			float h = an.heat[i];
 			float a = clamp((h - 0.5f) / 0.45f);
 			a = a * a * 0.9f + an.glow[i] * 0.22f * look.haloStrength;
+			if (rims)
+			{
+				float d = (h - 0.6f) / 0.13f;
+				a = (float) Math.exp(-d * d) * 0.85f;
+			}
 			if (dark)
 			{
 				a = 0;
@@ -345,14 +354,19 @@ final class CapeTextures
 				return scale(c, 0.9f + 0.16f * n + 0.07f * (float) Math.sin(v * 44 + Math.sin(u * 9) * 1.5));
 			case PRISM:
 			{
-				// crystal: veins shimmer through a soft rainbow, the stone has bright facets
-				float k = clamp((h - 0.38f) / 0.42f) * 0.75f;
-				int rainbow = Color.HSBtoRGB((u * 0.8f + v * 0.6f) % 1f, 0.45f, 1f) & 0xFFFFFF;
-				c = lerp(c, rainbow, k);
-				float facet = (float) Math.abs(Math.sin(u * 31 + v * 13) * Math.sin(v * 27 - u * 9));
-				if (h < 0.2f)
+				// crystal: every shard catches the light in its own pale colour, rims shimmer prismatic
+				int pid = an.plate[y * SIZE + x];
+				if (pid >= 0 && h < 0.45f)
 				{
-					c = lerp(c, 0xF0FCFF, facet > 0.9f ? 0.45f : 0f);
+					float pr = an.plateRand[pid];
+					int tint = Color.HSBtoRGB(0.45f + pr * 0.45f, 0.42f, 1f) & 0xFFFFFF;
+					float lum = (((c >> 16) & 255) * 0.3f + ((c >> 8) & 255) * 0.59f + (c & 255) * 0.11f) / 255f;
+					c = lerp(c, scale(tint, Math.min(1.15f, lum * 1.12f)), 0.6f);
+				}
+				if (h > 0.4f && h < 0.8f)
+				{
+					int rainbow = Color.HSBtoRGB((u * 0.8f + v * 0.6f) % 1f, 0.35f, 1f) & 0xFFFFFF;
+					c = lerp(c, rainbow, 0.3f);
 				}
 				return c;
 			}
@@ -381,16 +395,6 @@ final class CapeTextures
 				}
 				return c;
 			}
-			case SHEEN:
-				// golden: polished diagonal highlights across the plates
-				if (h < 0.3f)
-				{
-					// thin diagonal glints, like light catching polished metal
-					float band = (float) Math.sin((u + v) * 14.0) * 0.5f + 0.5f;
-					float streak = (float) Math.pow(band, 18);
-					c = screen(c, 0xC8A050, streak * 0.55f * an.centre[y * SIZE + x]);
-				}
-				return c;
 			case STARS:
 				// tormented: drifting demon sparks in the dark stone
 				if (h < 0.15f && n > 0.975f)
@@ -558,23 +562,6 @@ final class CapeTextures
 				}
 				break;
 			}
-			case HOOD:
-			{
-				// a hooded figure sigil: for those who walk their own path
-				Polygon hood = new Polygon(
-					new int[]{16, 24, 28, 27, 22, 10, 5, 4, 8},
-					new int[]{2, 7, 17, 28, 30, 30, 28, 17, 7}, 9);
-				g.setColor(new Color(0x2A0A0C));
-				g.fill(grow(hood));
-				g.setColor(new Color(mid));
-				g.fill(hood);
-				g.setColor(new Color(0x0C0606));
-				g.fillOval(10, 11, 12, 14);
-				g.setColor(new Color(core));
-				g.fillRect(12, 17, 3, 2);
-				g.fillRect(18, 17, 3, 2);
-				break;
-			}
 			case LEAVES:
 			{
 				// a single leaf; variant rotates it so the four leaves don't look stamped
@@ -615,48 +602,6 @@ final class CapeTextures
 				g.fillOval(12, 12, 8, 8);
 				break;
 			}
-			case SARADOMIN:
-			{
-				// Saradomin's star: a bold four-pointed star, long vertical arms, bright heart
-				Polygon star = new Polygon(
-					new int[]{16, 19, 29, 19, 16, 13, 3, 13},
-					new int[]{1, 12, 16, 20, 31, 20, 16, 12}, 8);
-				Polygon inner = new Polygon(
-					new int[]{16, 18, 24, 18, 16, 14, 8, 14},
-					new int[]{7, 14, 16, 18, 25, 18, 16, 14}, 8);
-				g.setColor(new Color(0x0A1430));
-				g.fill(grow(grow(star)));
-				g.setColor(new Color(0xB08A2A));
-				g.fill(grow(star));
-				g.setColor(new Color(mid));
-				g.fill(star);
-				g.setColor(new Color(core));
-				g.fill(inner);
-				g.setColor(Color.WHITE);
-				g.fillRect(15, 14, 2, 4);
-				g.fillRect(14, 15, 4, 2);
-				break;
-			}
-			case ZAMORAK:
-			{
-				// Zamorak's crest: a horned shield with a burning eye
-				Polygon crest = new Polygon(
-					new int[]{3, 9, 12, 16, 20, 23, 29, 25, 16, 7},
-					new int[]{2, 9, 7, 11, 7, 9, 2, 20, 30, 20}, 10);
-				g.setColor(new Color(0x140202));
-				g.fill(grow(grow(crest)));
-				g.setColor(new Color(dark));
-				g.fill(grow(crest));
-				g.setColor(new Color(mid));
-				g.fill(crest);
-				g.setColor(new Color(0x1A0202));
-				g.fillPolygon(new int[]{10, 16, 22, 16}, new int[]{16, 12, 16, 24}, 4);
-				g.setColor(new Color(core));
-				g.fillRect(14, 15, 4, 3);
-				g.setColor(new Color(0xFFE0A0));
-				g.fillRect(15, 16, 2, 1);
-				break;
-			}
 			case GUTHIX:
 			{
 				// Guthix's balance: a ring split in three
@@ -675,31 +620,99 @@ final class CapeTextures
 				g.fillOval(13, 13, 6, 6);
 				break;
 			}
-			case TWISTED:
-			{
-				// the twisted bow: a thick curved limb with a taut string and a green gem
-				g.setStroke(new BasicStroke(6, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-				g.setColor(new Color(0x061008));
-				g.drawArc(5, 2, 22, 28, 270, 180);
-				g.setStroke(new BasicStroke(3.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-				g.setColor(new Color(mid));
-				g.drawArc(5, 2, 22, 28, 270, 180);
-				g.setStroke(new BasicStroke(1.2f));
-				g.setColor(new Color(lerp(core, 0xFFFFFF, 0.3f)));
-				g.drawLine(16, 3, 16, 29);
-				g.setColor(new Color(0x061008));
-				g.fillOval(22, 12, 8, 8);
-				g.setColor(new Color(core));
-				g.fillOval(23, 13, 6, 6);
-				g.setColor(Color.WHITE);
-				g.fillRect(24, 14, 2, 2);
-				break;
-			}
 			default:
 				break;
 		}
 		g.dispose();
 		return img;
+	}
+
+	/** Number of different lightning-bolt frames the Lightning style cycles through. */
+	static final int BOLT_FRAMES = 6;
+
+	/**
+	 * Lightning: transparent frames of forked bolts that leap across the stone between the
+	 * glowing cracks. The overlay flashes one at a time.
+	 */
+	static BufferedImage[] boltFrames(CapeStyle style, Analysis an)
+	{
+		BufferedImage[] out = new BufferedImage[BOLT_FRAMES];
+		Random r = new Random(97);
+		int glow = sample(style, 0.8f);
+		for (int f = 0; f < BOLT_FRAMES; f++)
+		{
+			BufferedImage img = new BufferedImage(SIZE, SIZE, BufferedImage.TYPE_INT_ARGB);
+			Graphics2D g = img.createGraphics();
+			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			int bolts = 2;
+			for (int b = 0; b < bolts; b++)
+			{
+				// start on a vein
+				int sx = 0, sy = 0;
+				for (int t = 0; t < 2000; t++)
+				{
+					sx = r.nextInt(SIZE);
+					sy = r.nextInt(SIZE);
+					if (an.heat[sy * SIZE + sx] > 0.8f)
+					{
+						break;
+					}
+				}
+				java.awt.geom.Path2D.Float main = new java.awt.geom.Path2D.Float();
+				java.awt.geom.Path2D.Float fork = new java.awt.geom.Path2D.Float();
+				main.moveTo(sx, sy);
+				double ang = r.nextDouble() * Math.PI * 2;
+				float x = sx, y = sy;
+				int segs = 9 + r.nextInt(5);
+				for (int k = 0; k < segs; k++)
+				{
+					ang += (r.nextDouble() - 0.5) * 1.4;
+					float len = 6f + r.nextFloat() * 5f;
+					x += (float) Math.cos(ang) * len;
+					y += (float) Math.sin(ang) * len * 1.6f;
+					main.lineTo(x, y);
+					if (k == segs / 3 || k == (2 * segs) / 3)
+					{
+						fork.moveTo(x, y);
+						double fa = ang + (r.nextBoolean() ? 0.9 : -0.9);
+						float fx = x, fy = y;
+						for (int m = 0; m < 4; m++)
+						{
+							fa += (r.nextDouble() - 0.5) * 1.2;
+							fx += (float) Math.cos(fa) * 5f;
+							fy += (float) Math.sin(fa) * 5f * 1.6f;
+							fork.lineTo(fx, fy);
+						}
+					}
+				}
+				for (int dx = -SIZE; dx <= SIZE; dx += SIZE)
+				{
+					for (int dy = -SIZE; dy <= SIZE; dy += SIZE)
+					{
+						java.awt.geom.AffineTransform at = java.awt.geom.AffineTransform.getTranslateInstance(dx, dy);
+						Shape m = at.createTransformedShape(main), fk = at.createTransformedShape(fork);
+						g.setColor(new Color((glow & 0xFFFFFF) | 0x40000000, true));
+						g.setStroke(new BasicStroke(7f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+						g.draw(m);
+						g.setStroke(new BasicStroke(4.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+						g.draw(fk);
+						g.setColor(new Color(glow));
+						g.setStroke(new BasicStroke(3.2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+						g.draw(m);
+						g.setStroke(new BasicStroke(2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+						g.draw(fk);
+						g.setColor(Color.WHITE);
+						g.setStroke(new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+						g.draw(m);
+						g.setStroke(new BasicStroke(0.9f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+						g.draw(fk);
+					}
+				}
+			}
+			g.dispose();
+			out[f] = img;
+		}
+		return out;
 	}
 
 	/** A soft round glow in the style's hot colour, drawn behind emblems. */

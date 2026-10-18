@@ -71,42 +71,24 @@ final class StyleLook
 				return new StyleLook(0xA88A10, 0.40f, 0.14f, Motion.FLICKER, 22, 0.0f, 0.95f, 0.9f);
 			case RUNE:
 				return new StyleLook(0x0C4E8A, 0.65f, 0.16f, Motion.RIPPLE, 12, 0.05f, 0.7f, 3.0f);
-			case DRAGONFIRE:
-				return new StyleLook(0x8A0E04, 0.70f, 0.16f, Motion.BURN, 26, 0.15f, 0.75f, 1.0f);
 			case VOID:
 				return new StyleLook(0x8A1E8A, 0.55f, 0.14f, Motion.PULSE, 8, 0.0f, 0.65f, 3.2f);
 			case SANDSTONE:
 				return new StyleLook(0x3A2816, 0.30f, 0.34f, Motion.FLOW, 5, 0.0f, 0.0f, 1f);
 			case CRYSTAL:
 				return new StyleLook(0xC8F0FF, 0.45f, 0.24f, Motion.SHIMMER, 8, 0.05f, 0.8f, 3.5f);
-			case ROGUELIKE:
-				return new StyleLook(0x3C0808, 0.55f, 0.12f, Motion.PULSE, 9, 0.0f, 0.4f, 5.5f);
-			case GOLDEN:
-				return new StyleLook(0x8A5A0A, 0.50f, 0.20f, Motion.SHIMMER, 10, 0.0f, 0.8f, 3.0f);
-			case TOXIC:
-				return new StyleLook(0x0E6A3A, 0.65f, 0.18f, Motion.FLOW, 14, 0.1f, 0.55f, 1.8f);
 			case CORRUPTED:
 				return new StyleLook(0x8A1426, 0.60f, 0.30f, Motion.FLICKER, 10, 0.05f, 0.7f, 2.4f);
 			case SANGUINE:
 				return new StyleLook(0x8A0A10, 0.70f, 0.16f, Motion.PULSE, 12, 0.1f, 0.65f, 2.6f);
 			case AMASCUT:
 				return new StyleLook(0xFFD27A, 0.35f, 0.30f, Motion.SHIMMER, 7, 0.0f, 0.7f, 5.0f);
-			case TIDAL:
-				return new StyleLook(0x0E5C8A, 0.60f, 0.20f, Motion.RIPPLE, 14, 0.05f, 0.65f, 2.6f);
-			case SARADOMIN:
-				return new StyleLook(0xC8D8FF, 0.40f, 0.14f, Motion.SHIMMER, 10, 0.05f, 0.8f, 4.0f);
-			case ZAMORAK:
-				return new StyleLook(0x7A0806, 0.70f, 0.16f, Motion.BURN, 18, 0.15f, 0.7f, 1.2f);
 			case GUTHIX:
 				return new StyleLook(0x3C5A1A, 0.40f, 0.30f, Motion.PULSE, 6, 0.05f, 0.45f, 6.0f);
-			case ABYSSAL:
-				return new StyleLook(0x5A0A3A, 0.65f, 0.18f, Motion.PULSE, 9, 0.05f, 0.6f, 2.8f);
 			case TORMENTED:
 				return new StyleLook(0x1E5A0A, 0.70f, 0.16f, Motion.BURN, 20, 0.15f, 0.8f, 1.0f);
 			case VARLAMORE:
 				return new StyleLook(0x9A2A1A, 0.60f, 0.18f, Motion.BURN, 12, 0.1f, 0.6f, 1.6f);
-			case TWISTED:
-				return new StyleLook(0x0E4A2A, 0.60f, 0.18f, Motion.RIPPLE, 8, 0.05f, 0.55f, 3.6f);
 			case CUSTOM:
 			{
 				// borrow the base design's motion and finish, with a halo in the custom colours
