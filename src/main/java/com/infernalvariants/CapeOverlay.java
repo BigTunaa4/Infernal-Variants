@@ -880,8 +880,9 @@ class CapeOverlay extends Overlay
 			cx = client.getCameraX();
 			cy = client.getCameraY();
 			cz = client.getCameraZ();
-			double yaw = client.getCameraYaw() * Math.PI / 1024.0;
-			double pitch = client.getCameraPitch() * Math.PI / 1024.0;
+			// camera angles come in 14-bit Jagex units: 16384 per full turn
+			double yaw = client.getCameraYaw() * Math.PI / 8192.0;
+			double pitch = client.getCameraPitch() * Math.PI / 8192.0;
 			ys = (float) Math.sin(yaw);
 			yc = (float) Math.cos(yaw);
 			ps = (float) Math.sin(pitch);
