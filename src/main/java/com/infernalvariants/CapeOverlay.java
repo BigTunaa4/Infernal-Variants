@@ -703,8 +703,10 @@ class CapeOverlay extends Overlay
 		return area == null ? current : area;
 	}
 
-	/** How many tiles around the player to look for scenery standing in front of the cape. */
-	private static final int SCENERY_RANGE = 6;
+	/** Extra tiles searched around the player and camera for scenery that could cover the cape. */
+	private static final int SCENERY_MARGIN_TILES = 3;
+	/** Never search further than this many tiles from the player (keeps zoomed-out views cheap). */
+	private static final int SCENERY_MAX_TILES = 40;
 
 	/** Scenery has to be at least this much nearer than the cape (local units) to count as in front. */
 	private static final float SCENERY_MARGIN = 8f;
@@ -719,12 +721,21 @@ class CapeOverlay extends Overlay
 		{
 			return area;
 		}
+		// search every tile between the player and the camera (a pillar right in front of a
+		// zoomed-out camera can be many tiles from the player)
 		int ox = ol.getSceneX(), oy = ol.getSceneY();
-		for (int x = ox - SCENERY_RANGE; x <= ox + SCENERY_RANGE; x++)
+		int camX = clamp((int) Math.floor(cam.cx) >> 7, ox - SCENERY_MAX_TILES, ox + SCENERY_MAX_TILES);
+		int camY = clamp((int) Math.floor(cam.cy) >> 7, oy - SCENERY_MAX_TILES, oy + SCENERY_MAX_TILES);
+		int minX = Math.max(0, Math.min(ox, camX) - SCENERY_MARGIN_TILES);
+		int maxX = Math.min(tiles[plane].length - 1, Math.max(ox, camX) + SCENERY_MARGIN_TILES);
+		for (int x = minX; x <= maxX; x++)
 		{
-			for (int y = oy - SCENERY_RANGE; y <= oy + SCENERY_RANGE; y++)
+			int minY = Math.max(0, Math.min(oy, camY) - SCENERY_MARGIN_TILES);
+			int maxY = Math.min(tiles[plane][x].length - 1, Math.max(oy, camY) + SCENERY_MARGIN_TILES);
+			for (int y = minY; y <= maxY; y++)
 			{
-				if (x < 0 || y < 0 || x >= tiles[plane].length || y >= tiles[plane][x].length)
+				// a tile whose nearest corner is already behind the cape can't hold anything in front of it
+				if (nearestCorner(x, y, cam) >= capeNear)
 				{
 					continue;
 				}
@@ -772,6 +783,25 @@ class CapeOverlay extends Overlay
 		return area;
 	}
 
+	private static int clamp(int v, int lo, int hi)
+	{
+		return v < lo ? lo : (v > hi ? hi : v);
+	}
+
+	/** Ground distance of a scene tile's corner nearest the camera. */
+	private static float nearestCorner(int x, int y, Camera cam)
+	{
+		float near = Float.MAX_VALUE;
+		for (int cx : new int[]{x * 128, (x + 1) * 128})
+		{
+			for (int cy : new int[]{y * 128, (y + 1) * 128})
+			{
+				near = Math.min(near, cam.ground(cx, cy));
+			}
+		}
+		return near;
+	}
+
 	/** True when every corner of the scene-tile footprint (inclusive) is nearer than the cape. */
 	private static boolean footprintInFront(int x0, int y0, int x1, int y1, float capeNear, Camera cam)
 	{
@@ -794,7 +824,7 @@ class CapeOverlay extends Overlay
 			return area;
 		}
 		LocalPoint al = a.getLocalLocation();
-		if (al == null || Math.abs(al.getX() - ol.getX()) > 640 || Math.abs(al.getY() - ol.getY()) > 640)
+		if (al == null || Math.abs(al.getX() - ol.getX()) > SCENERY_MAX_TILES * 128 || Math.abs(al.getY() - ol.getY()) > SCENERY_MAX_TILES * 128)
 		{
 			return area;
 		}
