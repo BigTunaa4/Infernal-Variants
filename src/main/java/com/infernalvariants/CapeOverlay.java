@@ -26,6 +26,7 @@ import net.runelite.api.Model;
 import net.runelite.api.NPC;
 import net.runelite.api.Perspective;
 import net.runelite.api.Player;
+import net.runelite.api.Point;
 import net.runelite.api.Scene;
 import net.runelite.api.Tile;
 import net.runelite.api.WallObject;
@@ -284,6 +285,9 @@ class CapeOverlay extends Overlay
 		}
 		// where the cape is on screen, so only things that actually overlap it are cut out
 		int bx0 = Integer.MAX_VALUE, by0 = Integer.MAX_VALUE, bx1 = Integer.MIN_VALUE, by1 = Integer.MIN_VALUE;
+		// how far along the ground (toward the camera's view direction) the visible cape sits
+		float capeNear = Float.MAX_VALUE, capeSum = 0;
+		int capeCount = 0;
 		for (PanelFace pf : faces)
 		{
 			if (pf.visible)
@@ -294,14 +298,18 @@ class CapeOverlay extends Overlay
 					by0 = Math.min(by0, sy[v]);
 					bx1 = Math.max(bx1, sx[v]);
 					by1 = Math.max(by1, sy[v]);
+					float gd = cam.ground(lx[v], ly[v]);
+					capeNear = Math.min(capeNear, gd);
+					capeSum += gd;
+					capeCount++;
 				}
 			}
 		}
+		float capeMid = capeCount > 0 ? capeSum / capeCount : capeNear;
 		Rectangle capeBounds = new Rectangle(bx0 - 2, by0 - 2, bx1 - bx0 + 4, by1 - by0 + 4);
 
 		Shape oldClip = g.getClip();
-		float playerDepth = cam.depth(lp.getX(), lp.getY(), baseZ - 100);
-		Shape clip = clipAroundBlockers(wv, p, playerDepth, cam, oldClip, capeBounds);
+		Shape clip = clipAroundBlockers(wv, p, capeNear, capeMid, cam, oldClip, capeBounds);
 		g.setClip(clip);
 
 		if (anyVisible && !style.isOriginal())
@@ -665,31 +673,43 @@ class CapeOverlay extends Overlay
 	 * Our drawing sits on top of the scene, so carve out anybody standing between the camera and
 	 * this cape (other players, NPCs, pets) so they still appear in front of it.
 	 */
-	private Shape clipAroundBlockers(WorldView wv, Player owner, float ownerDepth, Camera cam, Shape current,
-		Rectangle capeBounds)
+	/**
+	 * Cut anything that stands in front of the cape out of the drawing, so it covers the cape like
+	 * it covers the rest of the player.
+	 * <p>
+	 * Depth is judged along the ground in the camera's viewing direction. A person or NPC is in front
+	 * when their centre is nearer than the middle of the cape. Scenery is only treated as in front
+	 * when its whole footprint is nearer than the nearest point of the cape. Objects beside or
+	 * behind the player, or flat on the ground under them, never cut the cape, so it can't turn
+	 * see-through.
+	 *
+	 * @param capeNear ground distance of the cape's nearest visible point
+	 * @param capeMid  average ground distance of the cape's visible points
+	 */
+	private Shape clipAroundBlockers(WorldView wv, Player owner, float capeNear, float capeMid, Camera cam,
+		Shape current, Rectangle capeBounds)
 	{
 		LocalPoint ol = owner.getLocalLocation();
 		Area area = null;
 		for (Player other : wv.players())
 		{
-			area = carve(area, other, owner, ol, ownerDepth, cam, current, capeBounds);
+			area = carveActor(area, other, owner, ol, capeMid, cam, current, capeBounds);
 		}
 		for (NPC npc : wv.npcs())
 		{
-			area = carve(area, npc, owner, ol, ownerDepth, cam, current, capeBounds);
+			area = carveActor(area, npc, owner, ol, capeMid, cam, current, capeBounds);
 		}
-		area = carveScenery(area, wv, ol, ownerDepth, cam, current, capeBounds);
+		area = carveScenery(area, wv, ol, capeNear, cam, current, capeBounds);
 		return area == null ? current : area;
 	}
 
 	/** How many tiles around the player to look for scenery standing in front of the cape. */
 	private static final int SCENERY_RANGE = 6;
 
-	/**
-	 * Scenery between the camera and the cape (statues, trees, walls, pillars, wall decorations): cut
-	 * it out of the drawing, so the cape stays behind it like the rest of the player.
-	 */
-	private Area carveScenery(Area area, WorldView wv, LocalPoint ol, float ownerDepth, Camera cam, Shape current,
+	/** Scenery has to be at least this much nearer than the cape (local units) to count as in front. */
+	private static final float SCENERY_MARGIN = 8f;
+
+	private Area carveScenery(Area area, WorldView wv, LocalPoint ol, float capeNear, Camera cam, Shape current,
 		Rectangle capeBounds)
 	{
 		Scene scene = wv.getScene();
@@ -721,49 +741,75 @@ class CapeOverlay extends Overlay
 						if (o == null || o.getRenderable() instanceof Actor || o.getSceneMinLocation() == null
 							|| o.getSceneMinLocation().getX() != x || o.getSceneMinLocation().getY() != y)
 						{
-							continue; // players and NPCs are handled above; big objects once, from their corner tile
+							continue; // players and NPCs are handled separately; big objects once, from their corner tile
 						}
-						area = carveIfInFront(area, o.getConvexHull(), o.getX(), o.getY(), plane, ol, ownerDepth, cam,
-							current, capeBounds);
+						Point max = o.getSceneMaxLocation();
+						int x1 = max != null ? max.getX() : x, y1 = max != null ? max.getY() : y;
+						if (footprintInFront(x, y, x1, y1, capeNear, cam))
+						{
+							area = cut(area, o.getConvexHull(), current, capeBounds);
+						}
 					}
+				}
+				if (!footprintInFront(x, y, x, y, capeNear, cam))
+				{
+					continue;
 				}
 				WallObject wall = tile.getWallObject();
 				if (wall != null)
 				{
-					area = carveIfInFront(area, wall.getConvexHull(), wall.getX(), wall.getY(), plane, ol, ownerDepth,
-						cam, current, capeBounds);
-					area = carveIfInFront(area, wall.getConvexHull2(), wall.getX(), wall.getY(), plane, ol, ownerDepth,
-						cam, current, capeBounds);
+					area = cut(area, wall.getConvexHull(), current, capeBounds);
+					area = cut(area, wall.getConvexHull2(), current, capeBounds);
 				}
 				DecorativeObject deco = tile.getDecorativeObject();
 				if (deco != null)
 				{
-					area = carveIfInFront(area, deco.getConvexHull(), deco.getX(), deco.getY(), plane, ol, ownerDepth,
-						cam, current, capeBounds);
-					area = carveIfInFront(area, deco.getConvexHull2(), deco.getX(), deco.getY(), plane, ol, ownerDepth,
-						cam, current, capeBounds);
+					area = cut(area, deco.getConvexHull(), current, capeBounds);
+					area = cut(area, deco.getConvexHull2(), current, capeBounds);
 				}
 			}
 		}
 		return area;
 	}
 
-	private Area carveIfInFront(Area area, Shape hull, int x, int y, int plane, LocalPoint ol, float ownerDepth,
-		Camera cam, Shape current, Rectangle capeBounds)
+	/** True when every corner of the scene-tile footprint (inclusive) is nearer than the cape. */
+	private static boolean footprintInFront(int x0, int y0, int x1, int y1, float capeNear, Camera cam)
+	{
+		float far = -Float.MAX_VALUE;
+		for (int cx : new int[]{x0 * 128, (x1 + 1) * 128})
+		{
+			for (int cy : new int[]{y0 * 128, (y1 + 1) * 128})
+			{
+				far = Math.max(far, cam.ground(cx, cy));
+			}
+		}
+		return far < capeNear - SCENERY_MARGIN;
+	}
+
+	private Area carveActor(Area area, Actor a, Player owner, LocalPoint ol, float capeMid, Camera cam, Shape current,
+		Rectangle capeBounds)
+	{
+		if (a == null || a == owner)
+		{
+			return area;
+		}
+		LocalPoint al = a.getLocalLocation();
+		if (al == null || Math.abs(al.getX() - ol.getX()) > 640 || Math.abs(al.getY() - ol.getY()) > 640)
+		{
+			return area;
+		}
+		if (cam.ground(al.getX(), al.getY()) >= capeMid)
+		{
+			return area; // beside or behind the cape
+		}
+		return cut(area, a.getConvexHull(), current, capeBounds);
+	}
+
+	private Area cut(Area area, Shape hull, Shape current, Rectangle capeBounds)
 	{
 		if (hull == null || !hull.intersects(capeBounds))
 		{
 			return area;
-		}
-		if (x == ol.getX() && y == ol.getY())
-		{
-			return area; // on the player's own tile: can't tell front from back
-		}
-		LocalPoint at = new LocalPoint(x, y, ol.getWorldView());
-		float d = cam.depth(x, y, Perspective.getTileHeight(client, at, plane) - 80);
-		if (d >= ownerDepth - 24)
-		{
-			return area; // behind the player, or level with them
 		}
 		if (area == null)
 		{
@@ -777,36 +823,6 @@ class CapeOverlay extends Overlay
 	{
 		return current != null ? current.getBounds()
 			: new Rectangle(client.getViewportXOffset(), client.getViewportYOffset(), client.getViewportWidth(), client.getViewportHeight());
-	}
-
-	private Area carve(Area area, Actor a, Player owner, LocalPoint ol, float ownerDepth, Camera cam, Shape current,
-		Rectangle capeBounds)
-	{
-		if (a == null || a == owner)
-		{
-			return area;
-		}
-		LocalPoint al = a.getLocalLocation();
-		if (al == null || Math.abs(al.getX() - ol.getX()) > 640 || Math.abs(al.getY() - ol.getY()) > 640)
-		{
-			return area;
-		}
-		float d = cam.depth(al.getX(), al.getY(), Perspective.getTileHeight(client, al, client.getTopLevelWorldView().getPlane()) - 80);
-		if (d >= ownerDepth - 24)
-		{
-			return area;
-		}
-		Shape hull = a.getConvexHull();
-		if (hull == null || !hull.intersects(capeBounds))
-		{
-			return area;
-		}
-		if (area == null)
-		{
-			area = new Area(startBounds(current));
-		}
-		area.subtract(new Area(hull));
-		return area;
 	}
 
 	// ---------------------------------------------------------------- utils
@@ -840,6 +856,16 @@ class CapeOverlay extends Overlay
 			yc = (float) Math.cos(yaw);
 			ps = (float) Math.sin(pitch);
 			pc = (float) Math.cos(pitch);
+		}
+
+		/**
+		 * Distance along the ground in the direction the camera faces (local units). Larger is
+		 * farther from the camera. Height is left out, so a tall object and a cape at a different
+		 * height compare fairly.
+		 */
+		float ground(float x, float y)
+		{
+			return (y - cy) * yc - (x - cx) * ys;
 		}
 
 		float depth(float x, float y, float h)
