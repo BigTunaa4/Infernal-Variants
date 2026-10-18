@@ -59,5 +59,5 @@ The game can't recolour a texture, and the cape's outer panel is a single lava t
 All changes are client-side; only you see them.
 
 ## Known limits
-- Drawn on top of the scene: other players and NPCs standing in front of your cape are cut out, but small objects passing directly in front of it (e.g. a held weapon swung across your back) can appear behind the design.
+- The design is drawn over the finished frame, so the plugin works out per pixel what's in front of the cape (your own arms and weapon, pets, other players, NPCs, scenery) and leaves those visible. Very thin or see-through objects may not always cover it exactly.
 - Emblems are placed for the standard infernal cape; the infernal max cape gets the repaint and effects without emblems.
