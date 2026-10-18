@@ -10,6 +10,8 @@ import net.runelite.api.Client;
 import net.runelite.api.ColorTextureOverride;
 import net.runelite.api.GameState;
 import net.runelite.api.ItemComposition;
+import net.runelite.api.NPC;
+import net.runelite.api.NPCComposition;
 import net.runelite.api.Player;
 import net.runelite.api.PlayerComposition;
 import net.runelite.api.TextureProvider;
@@ -61,6 +63,9 @@ public class InfernalVariantsPlugin extends Plugin
 
 	@Inject
 	private InfernalVariantsConfig config;
+
+	@Inject
+	private ConfigManager configManager;
 
 	/** The game's own crack pattern as a heat map; every other pattern is generated. */
 	private float[] crackHeat;
@@ -182,7 +187,7 @@ public class InfernalVariantsPlugin extends Plugin
 					continue;
 				}
 				CapeStyle style = styleFor(p);
-				if (style != null && !style.isOriginal())
+				if (style != null && !style.isOriginal() && !onPetMount(p))
 				{
 					hider.hide(p.getModel());
 				}
@@ -192,6 +197,40 @@ public class InfernalVariantsPlugin extends Plugin
 		{
 			hider.restore(); // never leave a cape half hidden
 		}
+	}
+
+	/**
+	 * Whether the Pet Mounts plugin is drawing this player up on a mount. It hides the real player then and draws
+	 * a copy of them in the saddle, so a design painted where the real player stands would float beside the
+	 * mount. Those capes are left as the game draws them (on the rider) instead.
+	 */
+	boolean onPetMount(Player p)
+	{
+		if ("false".equals(configManager.getConfiguration("runelite", "petmountsplugin")))
+		{
+			return false; // Pet Mounts switched off
+		}
+		if (p == client.getLocalPlayer())
+		{
+			return "true".equals(configManager.getConfiguration("petmounts", "wasMounted"));
+		}
+		if (!"true".equals(configManager.getConfiguration("petmounts", "everyoneRides")))
+		{
+			return false;
+		}
+		// Other players ride when their pet is following them.
+		for (NPC npc : client.getTopLevelWorldView().npcs())
+		{
+			if (npc != null && npc.getInteracting() == p)
+			{
+				NPCComposition comp = npc.getComposition();
+				if (comp != null && comp.isFollower())
+				{
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	/** Puts the lava panels back once the frame is drawn. */

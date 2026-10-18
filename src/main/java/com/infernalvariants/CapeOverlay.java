@@ -164,9 +164,9 @@ class CapeOverlay extends Overlay
 				continue;
 			}
 			CapeStyle style = plugin.styleFor(p);
-			if (style == null)
+			if (style == null || plugin.onPetMount(p))
 			{
-				continue;
+				continue; // not ours to paint, or up on a Pet Mounts mount (see onPetMount)
 			}
 			try
 			{
